@@ -70,18 +70,26 @@ class Persona:
     def __str__(self):
         return f"{self.__id_persona} {self.__dni} - {self.__nombres} - {self.__apellidos} - {self.__correo} - {self.__direccion}"
     
-    def to_dict(self):   
+    def to_dict(self):
         return {
-            "ID_Persona"           : self.__id_persona,
-            "Dni"          : self.__dni,
-            "Nombre"       : self.__nombres,
-            "Apellido"     : self.__apellidos,
-            "Correo"       : self.__correo,
-            "Direccion"    : self.__direccion               
-        };
+            "ID_Persona": self.__id_persona,
+            "Dni": self.__dni,
+            "Nombre": self.__nombres,
+            "Apellido": self.__apellidos,
+            "Telefono": self.__telefono,
+            "Correo": self.__correo,
+            "Direccion": self.__direccion
+        }
         
     @classmethod
     def from_dict(cls, datos):
-        p = cls(datos["Dni"], datos["Nombre"], datos["Apellido"], datos["Correo"], datos["Direccion"])
-        p.id = datos["ID_Persona"]
-        return p
+
+        return cls(
+            id_persona=datos.get("ID_Persona", 0),
+            dni=datos.get("Dni", ""),
+            nombres=datos.get("Nombre", ""),
+            apellidos=datos.get("Apellido", ""),
+            telefono=datos.get("Telefono", ""),
+            correo=datos.get("Correo", ""),
+            direccion=datos.get("Direccion", "")
+        )
