@@ -23,15 +23,15 @@ class Distrito:
     def __str__(self):
         return f"{self.__id_distrito} - {self.__nombre}"
     
-    
-    def to_dict(self):   
+    def to_dict(self):
         return {
-            "ID_Distrito"  : self.__id_distrito,
-            "Nombre"       : self.__nombre,              
-        };
-    
+            "ID_Distrito": self.__id_distrito,
+            "Nombre": self.__nombre,
+        }
+
     @classmethod
     def from_dict(cls, datos):
-        d = cls(datos["Nombre"])
-        d.id = datos["ID_Distrito"]
-        return d
+        return cls(
+            datos["ID_Distrito"],
+            datos["Nombre"]
+        )
