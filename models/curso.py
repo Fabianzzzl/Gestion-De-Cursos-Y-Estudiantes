@@ -84,6 +84,13 @@ class Curso:
     
     @classmethod
     def from_dict(cls, datos):
-        c = cls(datos["Nombre"], datos["Descripcion"], datos["Credito"], datos["Horas Semanales"], datos["ID_Docente"])
-        c.id = datos["ID_Curso"]
-        return c
+
+        return cls(
+            datos["ID_Curso"],
+            datos["Nombre"],
+            datos["Descripcion"],
+            datos["Creditos"],
+            datos["Ciclo"],
+            datos["Horas Semanales"],
+            datos["ID_Docente"]
+        )
