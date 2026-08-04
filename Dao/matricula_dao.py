@@ -1,17 +1,6 @@
-# ==========================================
-# DAO: MATRICULA
-# Proyecto: Sistema de Gestión de Cursos y Estudiantes
-# Descripción:
-# Gestiona las operaciones CRUD de la entidad Matricula.
-# ==========================================
-
 from models.matricula import Matricula
-from config.logger import Logger
+from config.base_datos import obtener_conexion
 
-
-# ==========================================
-# Excepciones personalizadas
-# ==========================================
 
 class MatriculaNoEncontradaError(Exception):
 
@@ -19,60 +8,116 @@ class MatriculaNoEncontradaError(Exception):
         super().__init__(f"Matrícula ID={matricula_id} no encontrada")
 
 
-# ==========================================
-# DAO Matricula
-# ==========================================
-
 class MatriculaDAO:
 
-    # Constructor
-    def __init__(self):
+    # ==================================================
+    # INSERTAR
+    # ==================================================
 
-        self.__bd = []
-        self.__cid = 1
-        self.__log = Logger()
-
-    # --------------------------------------
-    # Insertar una nueva matrícula
-    # --------------------------------------
     def insertar(self, matricula):
 
-        matricula.id_matricula = self.__cid
-        self.__cid += 1
+        conn = obtener_conexion()
+        cursor = conn.cursor()
 
-        self.__bd.append(matricula)
-
-        self.__log.info(
-            f"Matrícula agregada: ID={matricula.id_matricula}"
+        cursor.execute(
+            """
+            INSERT INTO matricula
+            (fecha_matricula,estado,id_alumno,id_curso)
+            VALUES(?,?,?,?)
+            """,
+            (
+                matricula.fecha_matricula,
+                matricula.estado,
+                matricula.id_alumno,
+                matricula.id_curso
+            )
         )
+
+        conn.commit()
+
+        matricula.id_matricula = cursor.lastrowid
+
+        conn.close()
 
         return matricula
 
-    # --------------------------------------
-    # Buscar matrícula por ID
-    # --------------------------------------
+    # ==================================================
+    # BUSCAR POR ID
+    # ==================================================
+
     def buscar_por_id(self, matricula_id):
 
-        for m in self.__bd:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
 
-            if m.id_matricula == matricula_id:
-                return m
+        cursor.execute(
+            """
+            SELECT *
+            FROM matricula
+            WHERE id_matricula = ?
+            """,
+            (matricula_id,)
+        )
+
+        fila = cursor.fetchone()
+
+        conn.close()
+
+        if fila:
+
+            return Matricula(
+
+                fila["id_matricula"],
+                fila["fecha_matricula"],
+                fila["estado"],
+                fila["id_alumno"],
+                fila["id_curso"]
+
+            )
 
         return None
 
-    # --------------------------------------
-    # Obtener todas las matrículas
-    # --------------------------------------
+    # ==================================================
+    # LISTAR
+    # ==================================================
+
     def obtener_todos(self):
 
-        return sorted(
-            self.__bd,
-            key=lambda matricula: matricula.id_matricula
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM matricula
+            ORDER BY fecha_matricula
+            """
         )
 
-    # --------------------------------------
-    # Actualizar matrícula
-    # --------------------------------------
+        filas = cursor.fetchall()
+
+        conn.close()
+
+        return [
+
+            Matricula(
+
+                fila["id_matricula"],
+                fila["fecha_matricula"],
+                fila["estado"],
+                fila["id_alumno"],
+                fila["id_curso"]
+
+            )
+
+            for fila in filas
+
+        ]
+
+    # ==================================================
+    # ACTUALIZAR
+    # ==================================================
+
     def actualizar(
         self,
         matricula_id,
@@ -82,60 +127,69 @@ class MatriculaDAO:
         id_curso=None
     ):
 
-        m = self.buscar_por_id(matricula_id)
+        # Buscar matrícula actual
+        matricula = self.buscar_por_id(matricula_id)
 
-        if not m:
-
-            self.__log.error(
-                f"Actualizar fallido: Matrícula ID={matricula_id} no existe"
-            )
-
+        if matricula is None:
             raise MatriculaNoEncontradaError(matricula_id)
 
-        if fecha_matricula:
-            m.fecha_matricula = fecha_matricula
+        # Mantener valores actuales si no se envían cambios
+        fecha_matricula = matricula.fecha_matricula if fecha_matricula is None else fecha_matricula
+        estado = matricula.estado if estado is None else estado
+        id_alumno = matricula.id_alumno if id_alumno is None else id_alumno
+        id_curso = matricula.id_curso if id_curso is None else id_curso
 
-        if estado:
-            m.estado = estado
 
-        if id_alumno is not None:
-            m.id_alumno = id_alumno
+        conn = obtener_conexion()
+        cursor = conn.cursor()
 
-        if id_curso is not None:
-            m.id_curso = id_curso
-
-        self.__log.info(
-            f"Matrícula actualizada: ID={matricula_id}"
+        cursor.execute(
+            """
+            UPDATE matricula
+            SET
+                fecha_matricula = ?,
+                estado = ?,
+                id_alumno = ?,
+                id_curso = ?
+            WHERE id_matricula = ?
+            """,
+            (
+                fecha_matricula,
+                estado,
+                id_alumno,
+                id_curso,
+                matricula_id
+            )
         )
 
-        return m
+        conn.commit()
+        conn.close()
 
-    # --------------------------------------
-    # Eliminar matrícula
-    # --------------------------------------
+        return self.buscar_por_id(matricula_id)
+
+    # ==================================================
+    # ELIMINAR
+    # ==================================================
+
     def eliminar(self, matricula_id):
 
-        m = self.buscar_por_id(matricula_id)
+        conn = obtener_conexion()
+        cursor = conn.cursor()
 
-        if not m:
+        cursor.execute(
+            """
+            DELETE FROM matricula
+            WHERE id_matricula = ?
+            """,
+            (matricula_id,)
+        )
 
-            self.__log.error(
-                f"Eliminar fallido: Matrícula ID={matricula_id} no existe"
-            )
+        conn.commit()
+
+        if cursor.rowcount == 0:
+
+            conn.close()
 
             raise MatriculaNoEncontradaError(matricula_id)
 
-        self.__bd.remove(m)
-
-        self.__log.info(
-            f"Matrícula eliminada: ID={matricula_id}"
-        )
-
-        return True
-
-    # --------------------------------------
-    # Total de matrículas registradas
-    # --------------------------------------
-    def total(self):
-
-        return len(self.__bd)
+        conn.close()
