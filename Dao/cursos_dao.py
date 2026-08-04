@@ -119,3 +119,90 @@ class CursoDAO:
             for fila in filas
 
         ]
+    # ==================================================
+    # ACTUALIZAR
+    # ==================================================
+
+    def actualizar(
+        self,
+        curso_id,
+        nombre=None,
+        descripcion=None,
+        creditos=None,
+        ciclo=None,
+        horas_semanales=None,
+        id_docente=None
+    ):
+
+        # Buscar curso actual
+        curso = self.buscar_por_id(curso_id)
+
+        if curso is None:
+            raise CursoNoEncontradoError(curso_id)
+
+        # Mantener valores actuales si no se envían cambios
+        nombre = curso.nombre if nombre is None else nombre
+        descripcion = curso.descripcion if descripcion is None else descripcion
+        creditos = curso.creditos if creditos is None else creditos
+        ciclo = curso.ciclo if ciclo is None else ciclo
+        horas_semanales = curso.horas_semanales if horas_semanales is None else horas_semanales
+        id_docente = curso.id_docente if id_docente is None else id_docente
+
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE curso
+            SET
+                nombre = ?,
+                descripcion = ?,
+                creditos = ?,
+                ciclo = ?,
+                horas_semanales = ?,
+                id_docente = ?
+            WHERE id_curso = ?
+            """,
+            (
+                nombre,
+                descripcion,
+                creditos,
+                ciclo,
+                horas_semanales,
+                id_docente,
+                curso_id
+            )
+        )
+
+        conn.commit()
+        conn.close()
+
+        return self.buscar_por_id(curso_id)
+
+    # ==================================================
+    # ELIMINAR
+    # ==================================================
+
+    def eliminar(self, curso_id):
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            DELETE FROM curso
+            WHERE id_curso = ?
+            """,
+            (curso_id,)
+        )
+
+        conn.commit()
+
+        if cursor.rowcount == 0:
+
+            conn.close()
+
+            raise CursoNoEncontradoError(curso_id)
+
+        conn.close()
