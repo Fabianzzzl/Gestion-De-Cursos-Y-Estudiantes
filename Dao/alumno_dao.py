@@ -118,3 +118,113 @@ class AlumnoDAO:
             )
 
         return None
+    # ==================================================
+    # LISTAR
+    # ==================================================
+
+    def obtener_todos(self):
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM alumno
+            ORDER BY codigo_alumno
+            """
+        )
+
+        filas = cursor.fetchall()
+
+        conn.close()
+
+        return [
+
+            Alumno(
+
+                fila["id_alumno"],
+                fila["codigo_alumno"],
+                fila["id_persona"],
+                fila["id_distrito"]
+
+            )
+
+            for fila in filas
+
+        ]
+
+    # ==================================================
+    # ACTUALIZAR
+    # ==================================================
+
+    def actualizar(
+        self,
+        alumno_id,
+        codigo_alumno=None,
+        id_persona=None,
+        id_distrito=None
+    ):
+
+        # Buscar alumno actual
+        alumno = self.buscar_por_id(alumno_id)
+
+        if alumno is None:
+            raise AlumnoNoEncontradoError(alumno_id)
+
+        # Mantener valores actuales si no se envían cambios
+        codigo_alumno = alumno.codigo_alumno if codigo_alumno is None else codigo_alumno
+        id_persona = alumno.id_persona if id_persona is None else id_persona
+        id_distrito = alumno.id_distrito if id_distrito is None else id_distrito
+
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE alumno
+            SET
+                codigo_alumno = ?,
+                id_persona = ?,
+                id_distrito = ?
+            WHERE id_alumno = ?
+            """,
+            (
+                codigo_alumno,
+                id_persona,
+                id_distrito,
+                alumno_id
+            )
+        )
+
+        conn.commit()
+        conn.close()
+
+        return self.buscar_por_id(alumno_id)
+    # ==================================================
+    # ELIMINAR
+    # ==================================================
+
+    def eliminar(self, alumno_id):
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            DELETE FROM alumno
+            WHERE id_alumno = ?
+            """,
+            (alumno_id,)
+        )
+
+        conn.commit()
+
+        if cursor.rowcount == 0:
+
+            conn.close()
+
+            raise AlumnoNoEncontradoError(alumno_id)
+
+        conn.close()
