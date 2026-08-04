@@ -473,3 +473,151 @@ def menu_alumnos(adao):
 
             case _:
                 print("Opción no válida.")
+# ==========================================================
+# DOCENTE
+# ==========================================================
+
+def agregar_docente(dodao):
+
+    print("\n--- AGREGAR DOCENTE ---")
+
+    especialidad = input("  Especialidad : ")
+
+    try:
+
+        id_persona = int(input("  ID Persona   : "))
+
+        d = dodao.insertar(
+
+            Docente(
+                0,
+                especialidad,
+                id_persona
+            )
+
+        )
+
+        print(f"  OK Docente agregado con ID={d.id_docente}")
+
+    except ValueError:
+
+        print("  ERROR: El ID debe ser un número entero")
+
+
+# ----------------------------------------------------------
+
+def listar_docentes(dodao):
+
+    print("\n--- DOCENTES ---")
+
+    docentes = dodao.obtener_todos()
+
+    if docentes:
+
+        for d in docentes:
+
+            print(f"  {d}")
+
+    else:
+
+        print("  (No hay docentes registrados)")
+
+
+# ----------------------------------------------------------
+
+def eliminar_docente(dodao):
+
+    print("\n--- ELIMINAR DOCENTE ---")
+
+    try:
+
+        id_docente = int(input("  ID del docente a eliminar: "))
+
+        dodao.eliminar(id_docente)
+
+        print(f"  OK Docente ID={id_docente} eliminado")
+
+    except DocenteNoEncontradoError as ex:
+
+        print(f"  ERROR: {ex}")
+
+    except ValueError:
+
+        print("  ERROR: El ID debe ser un número entero")
+
+
+# ----------------------------------------------------------
+
+def actualizar_docente(dodao):
+
+    print("\n--- ACTUALIZAR DOCENTE ---")
+
+    try:
+
+        id_docente = int(input("  ID del docente a actualizar: "))
+
+        especialidad = input("  Nueva especialidad (Enter para no cambiar): ").strip()
+
+        persona = input("  Nuevo ID Persona (Enter para no cambiar): ").strip()
+
+        id_persona = int(persona) if persona else None
+
+        d = dodao.actualizar(
+
+            id_docente,
+
+            especialidad or None,
+
+            id_persona
+
+        )
+
+        print(f"  OK Docente actualizado: {d}")
+
+    except DocenteNoEncontradoError as ex:
+
+        print(f"  ERROR: {ex}")
+
+    except ValueError:
+
+        print("  ERROR: El ID debe ser un número entero")
+        
+def menu_docentes(dodao):
+
+    while True:
+
+        print("\n========================================")
+        print("          MENÚ DOCENTES")
+        print("========================================")
+        print("1. Registrar Docente")
+        print("2. Listar Docentes")
+        print("3. Actualizar Docente")
+        print("4. Eliminar Docente")
+        print("5. Ver Docentes en JSON")
+        print("0. Volver")
+        print("========================================")
+
+        opcion = input("Seleccione una opción: ").strip()
+
+        match opcion:
+
+            case "1":
+                agregar_docente(dodao)
+
+            case "2":
+                listar_docentes(dodao)
+
+            case "3":
+                actualizar_docente(dodao)
+
+            case "4":
+                eliminar_docente(dodao)
+
+            case "5":
+                ver_docentes_json(dodao)
+
+            case "0":
+                break
+
+            case _:
+                print("Opción no válida.")
