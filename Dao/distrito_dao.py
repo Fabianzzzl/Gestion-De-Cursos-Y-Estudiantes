@@ -1,134 +1,157 @@
-# ==========================================
-# DAO: DISTRITO
-# Proyecto: Sistema de Gestión de Cursos y Estudiantes
-# Descripción:
-# Gestiona las operaciones CRUD de la entidad Distrito.
-# ==========================================
-
 from models.distrito import Distrito
-from config.logger import Logger
-
-
-# ==========================================
-# Excepción personalizada
-# ==========================================
+from config.base_datos import obtener_conexion
 
 class DistritoNoEncontradoError(Exception):
-
     def __init__(self, distrito_id):
         super().__init__(f"Distrito ID={distrito_id} no encontrado")
 
 
-class DistritoDuplicadoError(Exception):
-
-    def __init__(self, nombre):
-        super().__init__(f"El distrito '{nombre}' ya está registrado")
-
-
-# ==========================================
-# DAO Distrito
-# ==========================================
-
 class DistritoDAO:
-
-    # Constructor
-    def __init__(self):
-        self.__bd = []
-        self.__cid = 1
-        self.__log = Logger()
-
-    # --------------------------------------
-    # Insertar un nuevo distrito
-    # --------------------------------------
+    # ==================================================
+    # INSERTAR
+    # ==================================================
     def insertar(self, distrito):
 
-        if self.buscar_por_nombre(distrito.nombre):
-            self.__log.warning(f"Distrito duplicado: {distrito.nombre}")
-            raise DistritoDuplicadoError(distrito.nombre)
+        conn = obtener_conexion()
+        cursor = conn.cursor()
 
-        distrito.id_distrito = self.__cid
-        self.__cid += 1
-
-        self.__bd.append(distrito)
-
-        self.__log.info(
-            f"Distrito agregado: {distrito.nombre} (ID={distrito.id_distrito})"
+        cursor.execute(
+            """
+            INSERT INTO distrito(nombre)
+            VALUES(?)
+            """,
+            (
+                distrito.nombre,
+            )
         )
+
+        conn.commit()
+
+        distrito.id_distrito = cursor.lastrowid
+
+        conn.close()
 
         return distrito
-
-    # --------------------------------------
-    # Buscar distrito por nombre
-    # --------------------------------------
-    def buscar_por_nombre(self, nombre):
-
-        for d in self.__bd:
-            if d.nombre.upper() == nombre.upper():
-                return d
-
-        return None
-
-    # --------------------------------------
-    # Buscar distrito por ID
-    # --------------------------------------
+    # ==================================================
+    # BUSCAR POR ID
+    # ==================================================
     def buscar_por_id(self, distrito_id):
 
-        for d in self.__bd:
-            if d.id_distrito == distrito_id:
-                return d
+        conn = obtener_conexion()
+        cursor = conn.cursor()
 
-        return None
-
-    # --------------------------------------
-    # Obtener todos los distritos
-    # --------------------------------------
-    def obtener_todos(self):
-
-        return sorted(self.__bd, key=lambda distrito: distrito.nombre)
-
-    # --------------------------------------
-    # Actualizar un distrito
-    # --------------------------------------
-    def actualizar(self, distrito_id, nombre=None):
-
-        d = self.buscar_por_id(distrito_id)
-
-        if not d:
-            self.__log.error(
-                f"Actualizar fallido: Distrito ID={distrito_id} no existe"
+        cursor.execute(
+            """
+            SELECT *
+            FROM distrito
+            WHERE id_distrito = ?
+            """,
+            (
+                distrito_id,
             )
-            raise DistritoNoEncontradoError(distrito_id)
-
-        if nombre:
-            d.nombre = nombre
-
-        self.__log.info(f"Distrito actualizado: ID={distrito_id}")
-
-        return d
-
-    # --------------------------------------
-    # Eliminar un distrito
-    # --------------------------------------
-    def eliminar(self, distrito_id):
-
-        d = self.buscar_por_id(distrito_id)
-
-        if not d:
-            self.__log.error(
-                f"Eliminar fallido: Distrito ID={distrito_id} no existe"
-            )
-            raise DistritoNoEncontradoError(distrito_id)
-
-        self.__bd.remove(d)
-
-        self.__log.info(
-            f"Distrito eliminado: {d.nombre} (ID={distrito_id})"
         )
 
-        return True
+        fila = cursor.fetchone()
 
-    # --------------------------------------
-    # Total de distritos registrados
-    # --------------------------------------
-    def total(self):
-        return len(self.__bd)
+        conn.close()
+
+        if fila:
+
+            return Distrito(
+
+                fila["id_distrito"],
+                fila["nombre"]
+
+            )
+
+        return None
+    # ==================================================
+    # LISTAR
+    # ==================================================
+    def obtener_todos(self):
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM distrito
+            ORDER BY nombre
+            """
+        )
+
+        filas = cursor.fetchall()
+
+        conn.close()
+
+        return [
+
+            Distrito(
+
+                fila["id_distrito"],
+                fila["nombre"]
+
+            )
+
+            for fila in filas
+
+        ]
+    # ==================================================
+    # ACTUALIZAR
+    # ==================================================
+    def actualizar(self, distrito_id, nombre):
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE distrito
+            SET nombre = ?
+            WHERE id_distrito = ?
+            """,
+            (
+                nombre,
+                distrito_id
+            )
+        )
+
+        conn.commit()
+
+        if cursor.rowcount == 0:
+
+            conn.close()
+
+            raise DistritoNoEncontradoError(distrito_id)
+
+        conn.close()
+
+        return self.buscar_por_id(distrito_id)
+    # ==================================================
+    # ELIMINAR
+    # ==================================================
+    def eliminar(self, distrito_id):
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            DELETE FROM distrito
+            WHERE id_distrito = ?
+            """,
+            (
+                distrito_id,
+            )
+        )
+
+        conn.commit()
+
+        if cursor.rowcount == 0:
+
+            conn.close()
+
+            raise DistritoNoEncontradoError(distrito_id)
+
+        conn.close()
