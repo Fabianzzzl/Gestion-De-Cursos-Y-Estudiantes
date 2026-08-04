@@ -785,3 +785,206 @@ def menu_cursos(cdao):
 
             case _:
                 print("Opción no válida.")
+                def menu_cursos(cdao):
+
+    while True:
+
+        print("\n========================================")
+        print("           MENÚ CURSOS")
+        print("========================================")
+        print("1. Registrar Curso")
+        print("2. Listar Cursos")
+        print("3. Actualizar Curso")
+        print("4. Eliminar Curso")
+        print("5. Ver Cursos en JSON")
+        print("0. Volver")
+        print("========================================")
+
+        opcion = input("Seleccione una opción: ").strip()
+
+        match opcion:
+
+            case "1":
+                agregar_curso(cdao)
+
+            case "2":
+                listar_cursos(cdao)
+
+            case "3":
+                actualizar_curso(cdao)
+
+            case "4":
+                eliminar_curso(cdao)
+
+            case "5":
+                ver_cursos_json(cdao)
+
+            case "0":
+                break
+
+            case _:
+                print("Opción no válida.")
+
+# ==========================================================
+# MATRICULA
+# ==========================================================
+        
+def agregar_matricula(mdao):
+
+    print("\n--- REGISTRAR MATRÍCULA ---")
+
+    fecha_matricula = input("Fecha Matrícula (YYYY-MM-DD): ")
+    estado = input(
+        "Estado (ACTIVO/RETIRADO/FINALIZADO): "
+    ).strip().upper()
+
+    if estado not in ("ACTIVO", "RETIRADO", "FINALIZADO"):
+        print("ERROR: Estado inválido.")
+        return    
+    id_alumno = int(input("ID Alumno: "))
+    id_curso = int(input("ID Curso: "))
+
+    try:
+
+        m = mdao.insertar(
+
+            Matricula(
+                0,
+                fecha_matricula,
+                estado,
+                id_alumno,
+                id_curso
+            )
+
+        )
+
+        print(f"OK Matrícula agregada ID={m.id_matricula}")
+
+    except Exception as ex:
+
+        print(f"ERROR: {ex}")
+        
+def listar_matriculas(mdao):
+
+    print("\n--- MATRÍCULAS ---")
+
+    matriculas = mdao.obtener_todos()
+
+    if matriculas:
+
+        for m in matriculas:
+
+            print(m)
+
+    else:
+
+        print("No existen matrículas registradas.")
+        
+def eliminar_matricula(mdao):
+
+    print("\n--- ELIMINAR MATRÍCULA ---")
+
+    try:
+
+        id_matricula = int(input("ID Matrícula: "))
+
+        mdao.eliminar(id_matricula)
+
+        print("Matrícula eliminada correctamente.")
+
+    except MatriculaNoEncontradaError as ex:
+
+        print(f"ERROR: {ex}")
+
+    except ValueError:
+
+        print("ERROR: El ID debe ser numérico.")
+
+def actualizar_matricula(mdao):
+
+    print("\n--- ACTUALIZAR MATRÍCULA ---")
+
+    try:
+
+        id_matricula = int(input("ID Matrícula: "))
+
+        fecha_matricula = input(
+            "Fecha Matrícula (Enter=no cambiar): "
+        ).strip()
+
+        estado = input(
+            "Estado (ACTIVO/RETIRADO/FINALIZADO, Enter=no cambiar): "
+        ).strip().upper()
+
+        if estado and estado not in ("ACTIVO", "RETIRADO", "FINALIZADO"):
+            print("ERROR: Estado inválido.")
+            return
+
+        id_alumno = input(
+            "ID Alumno (Enter=no cambiar): "
+        ).strip()
+
+        id_curso = input(
+            "ID Curso (Enter=no cambiar): "
+        ).strip()
+
+        matricula = mdao.actualizar(
+
+            id_matricula,
+
+            fecha_matricula or None,
+            estado or None,
+            int(id_alumno) if id_alumno else None,
+            int(id_curso) if id_curso else None
+
+        )
+
+        print(f"OK Matrícula actualizada: {matricula}")
+
+    except MatriculaNoEncontradaError as ex:
+
+        print(f"ERROR: {ex}")
+
+    except ValueError:
+
+        print("ERROR: Los IDs deben ser numéricos.")
+        
+def menu_matriculas(mdao):
+
+    while True:
+
+        print("\n========================================")
+        print("        MENÚ MATRÍCULAS")
+        print("========================================")
+        print("1. Registrar Matrícula")
+        print("2. Listar Matrículas")
+        print("3. Actualizar Matrícula")
+        print("4. Eliminar Matrícula")
+        print("5. Ver Matrículas en JSON")
+        print("0. Volver")
+        print("========================================")
+
+        opcion = input("Seleccione una opción: ").strip()
+
+        match opcion:
+
+            case "1":
+                agregar_matricula(mdao)
+
+            case "2":
+                listar_matriculas(mdao)
+
+            case "3":
+                actualizar_matricula(mdao)
+
+            case "4":
+                eliminar_matricula(mdao)
+
+            case "5":
+                ver_matriculas_json(mdao)
+
+            case "0":
+                break
+
+            case _:
+                print("Opción no válida.")
