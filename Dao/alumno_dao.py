@@ -1,5 +1,5 @@
 from models.alumno import Alumno
-from config.logger import Logger
+from config.base_datos import obtener_conexion
 
 
 class AlumnoNoEncontradoError(Exception):
@@ -16,112 +16,105 @@ class CodigoAlumnoDuplicadoError(Exception):
 
 class AlumnoDAO:
 
-    def __init__(self):
+    # ==================================================
+    # INSERTAR
+    # ==================================================
 
-        self.__bd = []
-        self.__cid = 1
-        self.__log = Logger()
-
-    # Insertar
     def insertar(self, alumno):
 
         if self.buscar_por_codigo(alumno.codigo_alumno):
+            raise CodigoAlumnoDuplicadoError(alumno.codigo_alumno)
 
-            self.__log.warning(
-                f"Código duplicado: {alumno.codigo_alumno}"
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO alumno
+            (codigo_alumno,id_persona,id_distrito)
+            VALUES(?,?,?)
+            """,
+            (
+                alumno.codigo_alumno,
+                alumno.id_persona,
+                alumno.id_distrito
             )
-
-            raise CodigoAlumnoDuplicadoError(
-                alumno.codigo_alumno
-            )
-
-        alumno.id_alumno = self.__cid
-        self.__cid += 1
-
-        self.__bd.append(alumno)
-
-        self.__log.info(
-            f"Alumno agregado ID={alumno.id_alumno}"
         )
+
+        conn.commit()
+
+        alumno.id_alumno = cursor.lastrowid
+
+        conn.close()
 
         return alumno
 
-    # Buscar por código
+    # ==================================================
+    # BUSCAR POR CÓDIGO
+    # ==================================================
+
     def buscar_por_codigo(self, codigo):
 
-        for a in self.__bd:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
 
-            if a.codigo_alumno == codigo:
+        cursor.execute(
+            """
+            SELECT *
+            FROM alumno
+            WHERE codigo_alumno = ?
+            """,
+            (codigo,)
+        )
 
-                return a
+        fila = cursor.fetchone()
+
+        conn.close()
+
+        if fila:
+
+            return Alumno(
+
+                fila["id_alumno"],
+                fila["codigo_alumno"],
+                fila["id_persona"],
+                fila["id_distrito"]
+
+            )
 
         return None
 
-    # Buscar por ID
+    # ==================================================
+    # BUSCAR POR ID
+    # ==================================================
+
     def buscar_por_id(self, alumno_id):
 
-        for a in self.__bd:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
 
-            if a.id_alumno == alumno_id:
+        cursor.execute(
+            """
+            SELECT *
+            FROM alumno
+            WHERE id_alumno = ?
+            """,
+            (alumno_id,)
+        )
 
-                return a
+        fila = cursor.fetchone()
+
+        conn.close()
+
+        if fila:
+
+            return Alumno(
+
+                fila["id_alumno"],
+                fila["codigo_alumno"],
+                fila["id_persona"],
+                fila["id_distrito"]
+
+            )
 
         return None
-
-    # Listar
-    def obtener_todos(self):
-
-        return sorted(
-            self.__bd,
-            key=lambda alumno: alumno.codigo_alumno
-        )
-
-    # Actualizar
-    def actualizar(
-        self,
-        alumno_id,
-        codigo_alumno=None,
-        id_persona=None,
-        id_distrito=None
-    ):
-
-        a = self.buscar_por_id(alumno_id)
-
-        if not a:
-
-            raise AlumnoNoEncontradoError(alumno_id)
-
-        if codigo_alumno:
-            a.codigo_alumno = codigo_alumno
-
-        if id_persona is not None:
-            a.id_persona = id_persona
-
-        if id_distrito is not None:
-            a.id_distrito = id_distrito
-
-        self.__log.info(
-            f"Alumno actualizado ID={alumno_id}"
-        )
-
-        return a
-
-    # Eliminar
-    def eliminar(self, alumno_id):
-
-        a = self.buscar_por_id(alumno_id)
-
-        if not a:
-
-            raise AlumnoNoEncontradoError(alumno_id)
-
-        self.__bd.remove(a)
-
-        self.__log.info(
-            f"Alumno eliminado ID={alumno_id}"
-        )
-
-    # Total
-    def total(self):
-
-        return len(self.__bd)
