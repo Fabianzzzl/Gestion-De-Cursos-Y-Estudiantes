@@ -988,3 +988,58 @@ def menu_matriculas(mdao):
 
             case _:
                 print("Opción no válida.")
+# Json
+# persona
+def ver_personas_json(pdao):
+    print("\-- PERSONAS EN JSON --")
+    personas = pdao.obtener_todos()
+    if personas:
+        datos = [p.to_dict() for p in personas]
+        print(json.dumps(datos, indent=4, ensure_ascii=False))
+    else:
+        print(" (No hay personas registradas)")
+# distrito       
+def ver_distrito_json(ddao):
+    print("\-- DISTRITOS EN JSON --")
+    distritos = ddao.obtener_todos()
+    if distritos:
+        datos = [d.to_dict() for d in distritos]
+        print(json.dumps(datos, indent=4, ensure_ascii=False))
+    else:
+        print(" (No hay distritos registradas)")
+# alumno
+def ver_alumnos_json(adao):
+    print("\-- ALUMNOS EN JSON --")
+    alumnos = adao.obtener_todos()
+    if alumnos:
+        datos = [a.to_dict() for a in alumnos]
+        print(json.dumps(datos, indent=4, ensure_ascii=False))
+    else:
+        print(" (No hay alumnos registradas)")
+# docente
+def ver_docentes_json(dodao):
+    print("\-- DOCENTES EN JSON --")
+    docentes = dodao.obtener_todos()
+    if docentes:
+        datos = [do.to_dict() for do in docentes]
+        print(json.dumps(datos, indent=4, ensure_ascii=False))
+    else:
+        print(" (No hay docentes registradas)")
+# curso
+def ver_cursos_json(cdao):
+    print("\-- CURSOS EN JSON --")
+    cursos = cdao.obtener_todos()
+    if cursos:
+        datos = [c.to_dict() for c in cursos]
+        print(json.dumps(datos, indent=4, ensure_ascii=False))
+    else:
+        print(" (No hay cursos registradas)")
+# matricula
+def ver_matriculas_json(mdao):
+    print("\-- MATRICULAS EN JSON --")
+    matriculas = mdao.obtener_todos()
+    if matriculas:
+        datos = [m.to_dict() for m in matriculas]
+        print(json.dumps(datos, indent=4, ensure_ascii=False))
+    else:
+        print(" (No hay matriculas registradas)")
