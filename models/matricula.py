@@ -55,16 +55,21 @@ class Matricula:
     def __str__(self):
         return f"Matrícula {self.__id_matricula} - {self.__estado} - {self.__id_alumno} - {self.__id_curso}"
     
-    def to_dict(self):   
+    def to_dict(self):
         return {
-            "ID_Matricula"           : self.__id_matricula,
-            "Estado"          : self.__estado,
-            "ID_Alumno"       : self.__id_alumno,
-            "ID_Curso"     : self.__id_curso,           
-        };
-        
+            "ID_Matricula": self.__id_matricula,
+            "Fecha_Matricula": self.__fecha_matricula,
+            "Estado": self.__estado,
+            "ID_Alumno": self.__id_alumno,
+            "ID_Curso": self.__id_curso,
+        }
+
     @classmethod
     def from_dict(cls, datos):
-        m = cls(datos["Estado"], datos["ID_Alumno"], datos["ID_Curso"])
-        m.id = datos["ID_Matricula"]
-        return m
+        return cls(
+            datos.get("ID_Matricula", 0),
+            datos.get("Fecha_Matricula", ""),
+            datos.get("Estado", ""),
+            datos.get("ID_Alumno", 0),
+            datos.get("ID_Curso", 0)
+        )
