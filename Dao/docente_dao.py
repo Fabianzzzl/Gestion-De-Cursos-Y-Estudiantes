@@ -1,17 +1,6 @@
-# ==========================================
-# DAO: DOCENTE
-# Proyecto: Sistema de Gestión de Cursos y Estudiantes
-# Descripción:
-# Gestiona las operaciones CRUD de la entidad Docente.
-# ==========================================
-
 from models.docente import Docente
-from config.logger import Logger
+from config.base_datos import obtener_conexion
 
-
-# ==========================================
-# Excepciones personalizadas
-# ==========================================
 
 class DocenteNoEncontradoError(Exception):
 
@@ -19,115 +8,174 @@ class DocenteNoEncontradoError(Exception):
         super().__init__(f"Docente ID={docente_id} no encontrado")
 
 
-# ==========================================
-# DAO Docente
-# ==========================================
-
 class DocenteDAO:
 
-    # Constructor
-    def __init__(self):
+    # ==================================================
+    # INSERTAR
+    # ==================================================
 
-        self.__bd = []
-        self.__cid = 1
-        self.__log = Logger()
-
-    # --------------------------------------
-    # Insertar un nuevo docente
-    # --------------------------------------
     def insertar(self, docente):
 
-        docente.id_docente = self.__cid
-        self.__cid += 1
+        conn = obtener_conexion()
+        cursor = conn.cursor()
 
-        self.__bd.append(docente)
-
-        self.__log.info(
-            f"Docente agregado: Especialidad {docente.especialidad} (ID={docente.id_docente})"
+        cursor.execute(
+            """
+            INSERT INTO docente
+            (especialidad,id_persona)
+            VALUES(?,?)
+            """,
+            (
+                docente.especialidad,
+                docente.id_persona
+            )
         )
+
+        conn.commit()
+
+        docente.id_docente = cursor.lastrowid
+
+        conn.close()
 
         return docente
 
-    # --------------------------------------
-    # Buscar docente por ID
-    # --------------------------------------
+    # ==================================================
+    # BUSCAR POR ID
+    # ==================================================
+
     def buscar_por_id(self, docente_id):
 
-        for do in self.__bd:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
 
-            if do.id_docente == docente_id:
-                return do
+        cursor.execute(
+            """
+            SELECT *
+            FROM docente
+            WHERE id_docente = ?
+            """,
+            (docente_id,)
+        )
+
+        fila = cursor.fetchone()
+
+        conn.close()
+
+        if fila:
+
+            return Docente(
+
+                fila["id_docente"],
+                fila["especialidad"],
+                fila["id_persona"]
+
+            )
 
         return None
 
-    # --------------------------------------
-    # Obtener todos los docentes
-    # --------------------------------------
+    # ==================================================
+    # LISTAR
+    # ==================================================
+
     def obtener_todos(self):
 
-        return sorted(
-            self.__bd,
-            key=lambda docente: docente.especialidad
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM docente
+            ORDER BY especialidad
+            """
         )
 
-    # --------------------------------------
-    # Actualizar docente
-    # --------------------------------------
+        filas = cursor.fetchall()
+
+        conn.close()
+
+        return [
+
+            Docente(
+
+                fila["id_docente"],
+                fila["especialidad"],
+                fila["id_persona"]
+
+            )
+
+            for fila in filas
+
+        ]
+
+    # ==================================================
+    # ACTUALIZAR
+    # ==================================================
+
     def actualizar(
-        self,
-        docente_id,
-        especialidad=None,
-        id_persona=None
+    self,
+    docente_id,
+    especialidad=None,
+    id_persona=None
     ):
 
-        do = self.buscar_por_id(docente_id)
+    # Buscar docente actual
+        docente = self.buscar_por_id(docente_id)
 
-        if not do:
-
-            self.__log.error(
-                f"Actualizar fallido: Docente ID={docente_id} no existe"
-            )
-
+        if docente is None:
             raise DocenteNoEncontradoError(docente_id)
 
-        if especialidad:
-            do.especialidad = especialidad
+        # Mantener valores actuales si no se envía un cambio
+        especialidad = docente.especialidad if especialidad is None else especialidad
+        id_persona = docente.id_persona if id_persona is None else id_persona
 
-        if id_persona:
-            do.id_persona = id_persona
 
-        self.__log.info(
-            f"Docente actualizado: ID={docente_id}"
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE docente
+            SET
+                especialidad = ?,
+                id_persona = ?
+            WHERE id_docente = ?
+            """,
+            (
+                especialidad,
+                id_persona,
+                docente_id
+            )
         )
 
-        return do
+        conn.commit()
+        conn.close()
 
-    # --------------------------------------
-    # Eliminar docente
-    # --------------------------------------
+        return self.buscar_por_id(docente_id)
+
+    # ==================================================
+    # ELIMINAR
+    # ==================================================
+
     def eliminar(self, docente_id):
 
-        do = self.buscar_por_id(docente_id)
+        conn = obtener_conexion()
+        cursor = conn.cursor()
 
-        if not do:
+        cursor.execute(
+            """
+            DELETE FROM docente
+            WHERE id_docente = ?
+            """,
+            (docente_id,)
+        )
 
-            self.__log.error(
-                f"Eliminar fallido: Docente ID={docente_id} no existe"
-            )
+        conn.commit()
+
+        if cursor.rowcount == 0:
+
+            conn.close()
 
             raise DocenteNoEncontradoError(docente_id)
 
-        self.__bd.remove(do)
-
-        self.__log.info(
-            f"Docente eliminado: ID={docente_id}"
-        )
-
-        return True
-
-    # --------------------------------------
-    # Total de docentes registrados
-    # --------------------------------------
-    def total(self):
-
-        return len(self.__bd)
+        conn.close()
