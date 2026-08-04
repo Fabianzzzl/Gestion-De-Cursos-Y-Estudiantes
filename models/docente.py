@@ -34,14 +34,17 @@ class Docente:
     def __str__(self):
         return f"{self.__id_docente} - {self.__especialidad} - {self.__id_persona}"
     
-    def to_dict(self):   
+    def to_dict(self):
         return {
-            "ID_Docente"           : self.__id_docente,
-            "Especialidad" : self.__especialidad,
-            "ID_Persona"      : self.__id_persona,
-        };
+            "ID_Docente": self.__id_docente,
+            "Especialidad": self.__especialidad,
+            "ID_Persona": self.__id_persona,
+        }
+
     @classmethod
     def from_dict(cls, datos):
-        do = cls(datos["Especialidad"], datos["ID_Persona"])
-        do.id = datos["ID_Docente"]
-        return do
+        return cls(
+            datos["ID_Docente"],
+            datos["Especialidad"],
+            datos["ID_Persona"]
+        )
