@@ -180,3 +180,141 @@ def menu_personas(pdao):
 
             case _:
                 print("Opción no válida.")
+# ==========================================================
+# DISTRITO
+# ==========================================================
+
+def agregar_distrito(ddao):
+
+    print("\n--- REGISTRAR DISTRITO ---")
+
+    nombre = input("Nombre del distrito: ")
+
+    try:
+
+        distrito = Distrito(
+
+            0,
+
+            nombre
+
+        )
+
+        distrito = ddao.insertar(distrito)
+
+        print(f"\nDistrito registrado con ID={distrito.id_distrito}")
+
+    except Exception as ex:
+
+        print(f"\nERROR: {ex}")
+
+
+# ----------------------------------------------------------
+
+def listar_distritos(ddao):
+
+    print("\n--- DISTRITOS ---")
+
+    distritos = ddao.obtener_todos()
+
+    if distritos:
+
+        for d in distritos:
+
+            print(f"  {d}")
+
+    else:
+
+        print("  (No hay distritos registrados)")
+
+
+# ----------------------------------------------------------
+
+def eliminar_distrito(ddao):
+
+    print("\n--- ELIMINAR DISTRITO ---")
+
+    try:
+
+        id_distrito = int(input("  ID del distrito a eliminar: "))
+
+        ddao.eliminar(id_distrito)
+
+        print(f"  OK Distrito ID={id_distrito} eliminado")
+
+    except DistritoNoEncontradoError as ex:
+
+        print(f"  ERROR: {ex}")
+
+    except ValueError:
+
+        print("  ERROR: El ID debe ser un número entero")
+
+
+# ----------------------------------------------------------
+
+def actualizar_distrito(ddao):
+
+    print("\n--- ACTUALIZAR DISTRITO ---")
+
+    try:
+
+        id_distrito = int(input("  ID del distrito a actualizar: "))
+
+        nombre = input("  Nuevo nombre (Enter para no cambiar): ").strip()
+
+        d = ddao.actualizar(
+            id_distrito,
+            nombre or None
+        )
+
+        print(f"  OK Distrito actualizado: {d}")
+
+    except DistritoNoEncontradoError as ex:
+
+        print(f"  ERROR: {ex}")
+
+    except ValueError:
+
+        print("  ERROR: El ID debe ser un número entero")
+        
+def menu_distritos(ddao):
+
+    while True:
+
+        print("\n========================================")
+        print("         MENÚ DISTRITOS")
+        print("========================================")
+        print("1. Registrar Distrito")
+        print("2. Listar Distritos")
+        print("3. Actualizar Distrito")
+        print("4. Eliminar Distrito")
+        print("5. Ver Distritos en JSON")
+        print("0. Volver")
+        print("========================================")
+
+        opcion = input("Seleccione una opción: ").strip()
+
+        match opcion:
+
+            case "1":
+                agregar_distrito(ddao)
+
+            case "2":
+                listar_distritos(ddao)
+
+            case "3":
+                actualizar_distrito(ddao)
+
+            case "4":
+                eliminar_distrito(ddao)
+
+            case "5":
+                ver_distrito_json(ddao)
+
+            case "0":
+                break
+
+            case _:
+                print("Opción no válida.")
+        
