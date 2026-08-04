@@ -317,4 +317,159 @@ def menu_distritos(ddao):
 
             case _:
                 print("Opción no válida.")
+# ==========================================================
+# ALUMNO
+# ==========================================================
+
+def agregar_alumno(adao):
+
+    print("\n--- AGREGAR ALUMNO ---")
+
+    codigo = input("  Código Alumno : ")
+
+    try:
+
+        id_persona = int(input("  ID Persona   : "))
+        id_distrito = int(input("  ID Distrito  : "))
+
+        a = adao.insertar(
+
+            Alumno(
+                0,
+                codigo,
+                id_persona,
+                id_distrito
+            )
+
+        )
+
+        print(f"  OK Alumno agregado con ID={a.id_alumno}")
+
+    except CodigoAlumnoDuplicadoError as ex:
+
+        print(f"  ERROR: {ex}")
+
+    except ValueError:
+
+        print("  ERROR: Los ID deben ser números enteros")
+
+
+# ----------------------------------------------------------
+
+def listar_alumnos(adao):
+
+    print("\n--- ALUMNOS ---")
+
+    alumnos = adao.obtener_todos()
+
+    if alumnos:
+
+        for a in alumnos:
+
+            print(f"  {a}")
+
+    else:
+
+        print("  (No hay alumnos registrados)")
+
+
+# ----------------------------------------------------------
+
+def eliminar_alumno(adao):
+
+    print("\n--- ELIMINAR ALUMNO ---")
+
+    try:
+
+        alumno_id = int(input("  ID del alumno a eliminar: "))
+
+        adao.eliminar(alumno_id)
+
+        print(f"  OK Alumno ID={alumno_id} eliminado")
+
+    except AlumnoNoEncontradoError as ex:
+
+        print(f"  ERROR: {ex}")
+
+    except ValueError:
+
+        print("  ERROR: El ID debe ser un número entero")
+
+
+# ----------------------------------------------------------
+
+def actualizar_alumno(adao):
+
+    print("\n--- ACTUALIZAR ALUMNO ---")
+
+    try:
+
+        alumno_id = int(input("  ID del alumno a actualizar: "))
+
+        codigo = input("  Nuevo código (Enter para no cambiar): ").strip()
+
+        persona = input("  Nuevo ID Persona (Enter para no cambiar): ").strip()
+
+        distrito = input("  Nuevo ID Distrito (Enter para no cambiar): ").strip()
+
+        id_persona = int(persona) if persona else None
+        id_distrito = int(distrito) if distrito else None
+
+        a = adao.actualizar(
+
+            alumno_id,
+            codigo or None,
+            id_persona,
+            id_distrito
+
+        )
+
+        print(f"  OK Alumno actualizado: {a}")
+
+    except AlumnoNoEncontradoError as ex:
+
+        print(f"  ERROR: {ex}")
+
+    except ValueError:
+
+        print("  ERROR: El ID debe ser un número entero")
         
+def menu_alumnos(adao):
+
+    while True:
+
+        print("\n========================================")
+        print("          MENÚ ALUMNOS")
+        print("========================================")
+        print("1. Registrar Alumno")
+        print("2. Listar Alumnos")
+        print("3. Actualizar Alumno")
+        print("4. Eliminar Alumno")
+        print("5. Ver Alumnos en JSON")
+        print("0. Volver")
+        print("========================================")
+
+        opcion = input("Seleccione una opción: ").strip()
+
+        match opcion:
+
+            case "1":
+                agregar_alumno(adao)
+
+            case "2":
+                listar_alumnos(adao)
+
+            case "3":
+                actualizar_alumno(adao)
+
+            case "4":
+                eliminar_alumno(adao)
+
+            case "5":
+                ver_alumnos_json(adao)
+
+            case "0":
+                break
+
+            case _:
+                print("Opción no válida.")
