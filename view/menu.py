@@ -621,3 +621,167 @@ def menu_docentes(dodao):
 
             case _:
                 print("Opción no válida.")
+# ==========================================================
+# CURSO
+# ==========================================================
+
+def agregar_curso(cdao):
+
+    print("\n--- AGREGAR CURSO ---")
+
+    nombre = input("  Nombre              : ")
+    descripcion = input("  Descripción         : ")
+
+    try:
+
+        creditos = int(input("  Créditos            : "))
+        ciclo = input("  Ciclo               : ")
+        horas = int(input("  Horas Semanales     : "))
+        id_docente = int(input("  ID Docente          : "))
+
+        c = cdao.insertar(
+
+            Curso(
+                0,
+                nombre,
+                descripcion,
+                creditos,
+                ciclo,
+                horas,
+                id_docente
+            )
+
+        )
+
+        print(f"  OK Curso agregado con ID={c.id_curso}")
+
+    except ValueError:
+
+        print("  ERROR: Créditos, horas e ID Docente deben ser números enteros")
+
+
+# ----------------------------------------------------------
+
+def listar_cursos(cdao):
+
+    print("\n--- CURSOS ---")
+
+    cursos = cdao.obtener_todos()
+
+    if cursos:
+
+        for c in cursos:
+
+            print(f"  {c}")
+
+    else:
+
+        print("  (No hay cursos registrados)")
+
+
+# ----------------------------------------------------------
+
+def eliminar_curso(cdao):
+
+    print("\n--- ELIMINAR CURSO ---")
+
+    try:
+
+        id_curso = int(input("  ID del curso a eliminar: "))
+
+        cdao.eliminar(id_curso)
+
+        print(f"  OK Curso ID={id_curso} eliminado")
+
+    except CursoNoEncontradoError as ex:
+
+        print(f"  ERROR: {ex}")
+
+    except ValueError:
+
+        print("  ERROR: El ID debe ser un número entero")
+
+
+# ----------------------------------------------------------
+
+def actualizar_curso(cdao):
+
+    print("\n--- ACTUALIZAR CURSO ---")
+
+    try:
+
+        id_curso = int(input("  ID del curso a actualizar: "))
+
+        nombre = input("  Nuevo nombre (Enter para no cambiar): ").strip()
+        descripcion = input("  Nueva descripción (Enter para no cambiar): ").strip()
+
+        creditos = input("  Nuevos créditos (Enter para no cambiar): ").strip()
+        ciclo = input("  Nuevo ciclo (Enter para no cambiar): ").strip()
+        horas = input("  Nuevas horas semanales (Enter para no cambiar): ").strip()
+        docente = input("  Nuevo ID Docente (Enter para no cambiar): ").strip()
+
+        creditos = int(creditos) if creditos else None
+        horas = int(horas) if horas else None
+        id_docente = int(docente) if docente else None
+
+        c = cdao.actualizar(
+
+            id_curso,
+            nombre or None,
+            descripcion or None,
+            creditos,
+            ciclo or None,
+            horas,
+            id_docente
+
+        )
+
+        print(f"  OK Curso actualizado: {c}")
+
+    except CursoNoEncontradoError as ex:
+
+        print(f"  ERROR: {ex}")
+
+    except ValueError:
+
+        print("  ERROR: Créditos, horas e ID Docente deben ser números enteros")
+        
+def menu_cursos(cdao):
+
+    while True:
+
+        print("\n========================================")
+        print("           MENÚ CURSOS")
+        print("========================================")
+        print("1. Registrar Curso")
+        print("2. Listar Cursos")
+        print("3. Actualizar Curso")
+        print("4. Eliminar Curso")
+        print("5. Ver Cursos en JSON")
+        print("0. Volver")
+        print("========================================")
+
+        opcion = input("Seleccione una opción: ").strip()
+
+        match opcion:
+
+            case "1":
+                agregar_curso(cdao)
+
+            case "2":
+                listar_cursos(cdao)
+
+            case "3":
+                actualizar_curso(cdao)
+
+            case "4":
+                eliminar_curso(cdao)
+
+            case "5":
+                ver_cursos_json(cdao)
+
+            case "0":
+                break
+
+            case _:
+                print("Opción no válida.")
