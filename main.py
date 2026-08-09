@@ -2,7 +2,7 @@ from config.base_datos import Inicializar
 from config.sistema_config import SistemaConfig
 from config.logger import Logger
 
-from views.menu import (
+from view.menu import (
     mostrar_menu,
     menu_personas,
     menu_distritos,
