@@ -786,45 +786,6 @@ def menu_cursos(cdao):
             case _:
                 print("Opción no válida.")
                 def menu_cursos(cdao):
-
-    while True:
-
-        print("\n========================================")
-        print("           MENÚ CURSOS")
-        print("========================================")
-        print("1. Registrar Curso")
-        print("2. Listar Cursos")
-        print("3. Actualizar Curso")
-        print("4. Eliminar Curso")
-        print("5. Ver Cursos en JSON")
-        print("0. Volver")
-        print("========================================")
-
-        opcion = input("Seleccione una opción: ").strip()
-
-        match opcion:
-
-            case "1":
-                agregar_curso(cdao)
-
-            case "2":
-                listar_cursos(cdao)
-
-            case "3":
-                actualizar_curso(cdao)
-
-            case "4":
-                eliminar_curso(cdao)
-
-            case "5":
-                ver_cursos_json(cdao)
-
-            case "0":
-                break
-
-            case _:
-                print("Opción no válida.")
-
 # ==========================================================
 # MATRICULA
 # ==========================================================
