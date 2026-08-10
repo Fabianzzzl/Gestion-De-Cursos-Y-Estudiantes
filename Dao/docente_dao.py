@@ -1,47 +1,98 @@
-from models.docente import Docente
+import psycopg2
+from config.logger import Logger
 from config.base_datos import obtener_conexion
+from models.docente import Docente
 
+# ==========================================
+# EXCEPCIONES
+# ==========================================
 
 class DocenteNoEncontradoError(Exception):
 
     def __init__(self, docente_id):
-        super().__init__(f"Docente ID={docente_id} no encontrado")
 
+        super().__init__(
+            f"Docente ID={docente_id} no encontrado"
+        )
+
+
+class DocenteConCursosError(Exception):
+
+    def __init__(self, docente_id):
+
+        super().__init__(
+            f"Docente ID={docente_id} no se puede eliminar: "
+            f"tiene cursos asociados"
+        )
+
+
+# ==========================================
+# CLASE DOCENTE DAO
+# ==========================================
 
 class DocenteDAO:
 
-    # ==================================================
+    def __init__(self):
+
+        self.__log = Logger()
+
+
+    # ==========================================
     # INSERTAR
-    # ==================================================
+    # ==========================================
 
     def insertar(self, docente):
 
         conn = obtener_conexion()
         cursor = conn.cursor()
 
-        cursor.execute(
-            """
-            INSERT INTO docente
-            (especialidad,id_persona)
-            VALUES(?,?)
-            """,
-            (
-                docente.especialidad,
-                docente.id_persona
+        try:
+
+            cursor.execute(
+                """
+                INSERT INTO docente
+                (
+                    especialidad,
+                    id_persona
+                )
+                VALUES (%s, %s)
+                RETURNING id_docente
+                """,
+                (
+                    docente.especialidad,
+                    docente.id_persona
+                )
             )
+
+            fila = cursor.fetchone()
+
+            conn.commit()
+
+            docente.id_docente = fila["id_docente"]
+
+        except psycopg2.IntegrityError:
+
+            conn.rollback()
+
+            raise
+
+        finally:
+
+            cursor.close()
+            conn.close()
+
+        self.__log.info(
+            f"Docente agregado: "
+            f"Especialidad {docente.especialidad} "
+            f"(ID={docente.id_docente})"
         )
-
-        conn.commit()
-
-        docente.id_docente = cursor.lastrowid
-
-        conn.close()
 
         return docente
 
-    # ==================================================
+
+    # ==========================================
     # BUSCAR POR ID
-    # ==================================================
+    # ==========================================
 
     def buscar_por_id(self, docente_id):
 
@@ -52,30 +103,28 @@ class DocenteDAO:
             """
             SELECT *
             FROM docente
-            WHERE id_docente = ?
+            WHERE id_docente = %s
             """,
-            (docente_id,)
+            (
+                docente_id,
+            )
         )
 
         fila = cursor.fetchone()
 
+        cursor.close()
         conn.close()
 
-        if fila:
+        return (
+            self.__fila_a_docente(fila)
+            if fila
+            else None
+        )
 
-            return Docente(
 
-                fila["id_docente"],
-                fila["especialidad"],
-                fila["id_persona"]
-
-            )
-
-        return None
-
-    # ==================================================
-    # LISTAR
-    # ==================================================
+    # ==========================================
+    # OBTENER TODOS
+    # ==========================================
 
     def obtener_todos(self):
 
@@ -92,90 +141,188 @@ class DocenteDAO:
 
         filas = cursor.fetchall()
 
+        cursor.close()
         conn.close()
 
         return [
-
-            Docente(
-
-                fila["id_docente"],
-                fila["especialidad"],
-                fila["id_persona"]
-
-            )
-
+            self.__fila_a_docente(fila)
             for fila in filas
-
         ]
 
-    # ==================================================
+
+    # ==========================================
     # ACTUALIZAR
-    # ==================================================
+    # ==========================================
 
     def actualizar(
-    self,
-    docente_id,
-    especialidad=None,
-    id_persona=None
+        self,
+        docente_id,
+        especialidad=None,
+        id_persona=None
     ):
 
-    # Buscar docente actual
-        docente = self.buscar_por_id(docente_id)
+        d = self.buscar_por_id(docente_id)
 
-        if docente is None:
-            raise DocenteNoEncontradoError(docente_id)
+        if not d:
 
-        # Mantener valores actuales si no se envía un cambio
-        especialidad = docente.especialidad if especialidad is None else especialidad
-        id_persona = docente.id_persona if id_persona is None else id_persona
+            self.__log.error(
+                f"Actualizar fallido: "
+                f"Docente ID={docente_id} no existe"
+            )
 
+            raise DocenteNoEncontradoError(
+                docente_id
+            )
+
+        nueva_especialidad = (
+            especialidad
+            if especialidad is not None
+            else d.especialidad
+        )
+
+        nueva_persona = (
+            id_persona
+            if id_persona is not None
+            else d.id_persona
+        )
 
         conn = obtener_conexion()
         cursor = conn.cursor()
 
-        cursor.execute(
-            """
-            UPDATE docente
-            SET
-                especialidad = ?,
-                id_persona = ?
-            WHERE id_docente = ?
-            """,
-            (
-                especialidad,
-                id_persona,
-                docente_id
+        try:
+
+            cursor.execute(
+                """
+                UPDATE docente
+                SET
+                    especialidad = %s,
+                    id_persona = %s
+                WHERE id_docente = %s
+                """,
+                (
+                    nueva_especialidad,
+                    nueva_persona,
+                    docente_id
+                )
             )
+
+            conn.commit()
+
+        except psycopg2.IntegrityError:
+
+            conn.rollback()
+
+            raise
+
+        finally:
+
+            cursor.close()
+            conn.close()
+
+        d.especialidad = nueva_especialidad
+        d.id_persona = nueva_persona
+
+        self.__log.info(
+            f"Docente actualizado: "
+            f"ID={docente_id}"
         )
 
-        conn.commit()
-        conn.close()
+        return d
 
-        return self.buscar_por_id(docente_id)
 
-    # ==================================================
+    # ==========================================
     # ELIMINAR
-    # ==================================================
+    # ==========================================
 
     def eliminar(self, docente_id):
 
+        d = self.buscar_por_id(docente_id)
+
+        if not d:
+
+            self.__log.error(
+                f"Eliminar fallido: "
+                f"Docente ID={docente_id} no existe"
+            )
+
+            raise DocenteNoEncontradoError(
+                docente_id
+            )
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        try:
+
+            cursor.execute(
+                """
+                DELETE FROM docente
+                WHERE id_docente = %s
+                """,
+                (
+                    docente_id,
+                )
+            )
+
+            conn.commit()
+
+        except psycopg2.IntegrityError:
+
+            conn.rollback()
+
+            self.__log.warning(
+                f"Eliminar fallido: "
+                f"Docente ID={docente_id} "
+                f"tiene cursos asociados"
+            )
+
+            raise DocenteConCursosError(
+                docente_id
+            )
+
+        finally:
+
+            cursor.close()
+            conn.close()
+
+        self.__log.info(
+            f"Docente eliminado: "
+            f"ID={docente_id}"
+        )
+
+
+    # ==========================================
+    # TOTAL
+    # ==========================================
+
+    def total(self):
+
         conn = obtener_conexion()
         cursor = conn.cursor()
 
         cursor.execute(
             """
-            DELETE FROM docente
-            WHERE id_docente = ?
-            """,
-            (docente_id,)
+            SELECT COUNT(*) AS total
+            FROM docente
+            """
         )
 
-        conn.commit()
+        total = cursor.fetchone()["total"]
 
-        if cursor.rowcount == 0:
-
-            conn.close()
-
-            raise DocenteNoEncontradoError(docente_id)
-
+        cursor.close()
         conn.close()
+
+        return total
+
+
+    # ==========================================
+    # FILA A DOCENTE
+    # ==========================================
+
+    def __fila_a_docente(self, fila):
+
+        return Docente(
+            fila["id_docente"],
+            fila["especialidad"],
+            fila["id_persona"]
+        )
