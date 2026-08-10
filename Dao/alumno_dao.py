@@ -1,57 +1,133 @@
-from models.alumno import Alumno
+import psycopg2
+from config.logger import Logger
 from config.base_datos import obtener_conexion
+from models.alumno import Alumno
 
+# ==========================================
+# EXCEPCIONES
+# ==========================================
 
 class AlumnoNoEncontradoError(Exception):
 
     def __init__(self, alumno_id):
-        super().__init__(f"Alumno ID={alumno_id} no encontrado")
+
+        super().__init__(
+            f"Alumno ID={alumno_id} no encontrado"
+        )
 
 
 class CodigoAlumnoDuplicadoError(Exception):
 
     def __init__(self, codigo):
-        super().__init__(f"Código '{codigo}' ya registrado")
 
+        super().__init__(
+            f"Código '{codigo}' ya registrado"
+        )
+
+
+class AlumnoConMatriculasError(Exception):
+
+    def __init__(self, alumno_id):
+
+        super().__init__(
+            f"Alumno ID={alumno_id} no se puede eliminar: "
+            f"tiene matrículas asociadas"
+        )
+
+
+# ==========================================
+# CLASE ALUMNO DAO
+# ==========================================
 
 class AlumnoDAO:
 
-    # ==================================================
+    def __init__(self):
+
+        self.__log = Logger()
+
+
+    # ==========================================
     # INSERTAR
-    # ==================================================
+    # ==========================================
 
     def insertar(self, alumno):
 
-        if self.buscar_por_codigo(alumno.codigo_alumno):
-            raise CodigoAlumnoDuplicadoError(alumno.codigo_alumno)
+        if self.buscar_por_codigo(
+            alumno.codigo_alumno
+        ):
+
+            self.__log.warning(
+                f"Código duplicado: "
+                f"{alumno.codigo_alumno}"
+            )
+
+            raise CodigoAlumnoDuplicadoError(
+                alumno.codigo_alumno
+            )
 
         conn = obtener_conexion()
         cursor = conn.cursor()
 
-        cursor.execute(
-            """
-            INSERT INTO alumno
-            (codigo_alumno,id_persona,id_distrito)
-            VALUES(?,?,?)
-            """,
-            (
-                alumno.codigo_alumno,
-                alumno.id_persona,
-                alumno.id_distrito
+        try:
+
+            cursor.execute(
+                """
+                INSERT INTO alumno
+                (
+                    codigo_alumno,
+                    id_persona,
+                    id_distrito
+                )
+                VALUES (%s, %s, %s)
+                RETURNING id_alumno
+                """,
+                (
+                    alumno.codigo_alumno,
+                    alumno.id_persona,
+                    alumno.id_distrito
+                )
             )
+
+            fila = cursor.fetchone()
+
+            conn.commit()
+
+            alumno.id_alumno = fila["id_alumno"]
+
+        except psycopg2.IntegrityError as ex:
+
+            conn.rollback()
+
+            if "alumno_codigo_alumno_key" in str(ex):
+
+                self.__log.warning(
+                    f"Código duplicado: "
+                    f"{alumno.codigo_alumno}"
+                )
+
+                raise CodigoAlumnoDuplicadoError(
+                    alumno.codigo_alumno
+                )
+
+            raise
+
+        finally:
+
+            cursor.close()
+            conn.close()
+
+        self.__log.info(
+            f"Alumno agregado: "
+            f"{alumno.codigo_alumno} "
+            f"(ID={alumno.id_alumno})"
         )
-
-        conn.commit()
-
-        alumno.id_alumno = cursor.lastrowid
-
-        conn.close()
 
         return alumno
 
-    # ==================================================
+
+    # ==========================================
     # BUSCAR POR CÓDIGO
-    # ==================================================
+    # ==========================================
 
     def buscar_por_codigo(self, codigo):
 
@@ -62,31 +138,28 @@ class AlumnoDAO:
             """
             SELECT *
             FROM alumno
-            WHERE codigo_alumno = ?
+            WHERE codigo_alumno = %s
             """,
-            (codigo,)
+            (
+                codigo,
+            )
         )
 
         fila = cursor.fetchone()
 
+        cursor.close()
         conn.close()
 
-        if fila:
+        return (
+            self.__fila_a_alumno(fila)
+            if fila
+            else None
+        )
 
-            return Alumno(
 
-                fila["id_alumno"],
-                fila["codigo_alumno"],
-                fila["id_persona"],
-                fila["id_distrito"]
-
-            )
-
-        return None
-
-    # ==================================================
+    # ==========================================
     # BUSCAR POR ID
-    # ==================================================
+    # ==========================================
 
     def buscar_por_id(self, alumno_id):
 
@@ -97,30 +170,28 @@ class AlumnoDAO:
             """
             SELECT *
             FROM alumno
-            WHERE id_alumno = ?
+            WHERE id_alumno = %s
             """,
-            (alumno_id,)
+            (
+                alumno_id,
+            )
         )
 
         fila = cursor.fetchone()
 
+        cursor.close()
         conn.close()
 
-        if fila:
+        return (
+            self.__fila_a_alumno(fila)
+            if fila
+            else None
+        )
 
-            return Alumno(
 
-                fila["id_alumno"],
-                fila["codigo_alumno"],
-                fila["id_persona"],
-                fila["id_distrito"]
-
-            )
-
-        return None
-    # ==================================================
-    # LISTAR
-    # ==================================================
+    # ==========================================
+    # OBTENER TODOS
+    # ==========================================
 
     def obtener_todos(self):
 
@@ -137,26 +208,18 @@ class AlumnoDAO:
 
         filas = cursor.fetchall()
 
+        cursor.close()
         conn.close()
 
         return [
-
-            Alumno(
-
-                fila["id_alumno"],
-                fila["codigo_alumno"],
-                fila["id_persona"],
-                fila["id_distrito"]
-
-            )
-
+            self.__fila_a_alumno(fila)
             for fila in filas
-
         ]
 
-    # ==================================================
+
+    # ==========================================
     # ACTUALIZAR
-    # ==================================================
+    # ==========================================
 
     def actualizar(
         self,
@@ -166,65 +229,189 @@ class AlumnoDAO:
         id_distrito=None
     ):
 
-        # Buscar alumno actual
-        alumno = self.buscar_por_id(alumno_id)
+        a = self.buscar_por_id(alumno_id)
 
-        if alumno is None:
-            raise AlumnoNoEncontradoError(alumno_id)
+        if not a:
 
-        # Mantener valores actuales si no se envían cambios
-        codigo_alumno = alumno.codigo_alumno if codigo_alumno is None else codigo_alumno
-        id_persona = alumno.id_persona if id_persona is None else id_persona
-        id_distrito = alumno.id_distrito if id_distrito is None else id_distrito
+            self.__log.error(
+                f"Actualizar fallido: "
+                f"Alumno ID={alumno_id} no existe"
+            )
 
+            raise AlumnoNoEncontradoError(
+                alumno_id
+            )
+
+        nuevo_codigo = (
+            codigo_alumno
+            if codigo_alumno is not None
+            else a.codigo_alumno
+        )
+
+        nueva_persona = (
+            id_persona
+            if id_persona is not None
+            else a.id_persona
+        )
+
+        nuevo_distrito = (
+            id_distrito
+            if id_distrito is not None
+            else a.id_distrito
+        )
 
         conn = obtener_conexion()
         cursor = conn.cursor()
 
-        cursor.execute(
-            """
-            UPDATE alumno
-            SET
-                codigo_alumno = ?,
-                id_persona = ?,
-                id_distrito = ?
-            WHERE id_alumno = ?
-            """,
-            (
-                codigo_alumno,
-                id_persona,
-                id_distrito,
-                alumno_id
+        try:
+
+            cursor.execute(
+                """
+                UPDATE alumno
+                SET
+                    codigo_alumno = %s,
+                    id_persona = %s,
+                    id_distrito = %s
+                WHERE id_alumno = %s
+                """,
+                (
+                    nuevo_codigo,
+                    nueva_persona,
+                    nuevo_distrito,
+                    alumno_id
+                )
             )
+
+            conn.commit()
+
+        except psycopg2.IntegrityError as ex:
+
+            conn.rollback()
+
+            if "alumno_codigo_alumno_key" in str(ex):
+
+                self.__log.warning(
+                    f"Actualizar fallido: "
+                    f"Código '{nuevo_codigo}' ya registrado"
+                )
+
+                raise CodigoAlumnoDuplicadoError(
+                    nuevo_codigo
+                )
+
+            raise
+
+        finally:
+
+            cursor.close()
+            conn.close()
+
+        a.codigo_alumno = nuevo_codigo
+        a.id_persona = nueva_persona
+        a.id_distrito = nuevo_distrito
+
+        self.__log.info(
+            f"Alumno actualizado: "
+            f"ID={alumno_id}"
         )
 
-        conn.commit()
-        conn.close()
+        return a
 
-        return self.buscar_por_id(alumno_id)
-    # ==================================================
+
+    # ==========================================
     # ELIMINAR
-    # ==================================================
+    # ==========================================
 
     def eliminar(self, alumno_id):
 
+        a = self.buscar_por_id(alumno_id)
+
+        if not a:
+
+            self.__log.error(
+                f"Eliminar fallido: "
+                f"Alumno ID={alumno_id} no existe"
+            )
+
+            raise AlumnoNoEncontradoError(
+                alumno_id
+            )
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        try:
+
+            cursor.execute(
+                """
+                DELETE FROM alumno
+                WHERE id_alumno = %s
+                """,
+                (
+                    alumno_id,
+                )
+            )
+
+            conn.commit()
+
+        except psycopg2.IntegrityError:
+
+            conn.rollback()
+
+            self.__log.warning(
+                f"Eliminar fallido: "
+                f"Alumno ID={alumno_id} "
+                f"tiene matrículas asociadas"
+            )
+
+            raise AlumnoConMatriculasError(
+                alumno_id
+            )
+
+        finally:
+
+            cursor.close()
+            conn.close()
+
+        self.__log.info(
+            f"Alumno eliminado: "
+            f"ID={alumno_id}"
+        )
+
+
+    # ==========================================
+    # TOTAL
+    # ==========================================
+
+    def total(self):
+
         conn = obtener_conexion()
         cursor = conn.cursor()
 
         cursor.execute(
             """
-            DELETE FROM alumno
-            WHERE id_alumno = ?
-            """,
-            (alumno_id,)
+            SELECT COUNT(*) AS total
+            FROM alumno
+            """
         )
 
-        conn.commit()
+        total = cursor.fetchone()["total"]
 
-        if cursor.rowcount == 0:
-
-            conn.close()
-
-            raise AlumnoNoEncontradoError(alumno_id)
-
+        cursor.close()
         conn.close()
+
+        return total
+
+
+    # ==========================================
+    # FILA A ALUMNO
+    # ==========================================
+
+    def __fila_a_alumno(self, fila):
+
+        return Alumno(
+            fila["id_alumno"],
+            fila["codigo_alumno"],
+            fila["id_persona"],
+            fila["id_distrito"]
+        )
