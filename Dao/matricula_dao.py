@@ -1,49 +1,136 @@
-from models.matricula import Matricula
+import psycopg2
+from config.logger import Logger
 from config.base_datos import obtener_conexion
+from models.matricula import Matricula
 
+# ==========================================
+# EXCEPCIONES
+# ==========================================
 
 class MatriculaNoEncontradaError(Exception):
 
     def __init__(self, matricula_id):
-        super().__init__(f"Matrícula ID={matricula_id} no encontrada")
 
+        super().__init__(
+            f"Matrícula ID={matricula_id} no encontrada"
+        )
+
+
+class MatriculaDuplicadaError(Exception):
+
+    def __init__(self, id_alumno, id_curso):
+
+        super().__init__(
+            f"El alumno ID={id_alumno} "
+            f"ya está matriculado en el curso ID={id_curso}"
+        )
+
+
+# ==========================================
+# CLASE MATRICULA DAO
+# ==========================================
 
 class MatriculaDAO:
 
-    # ==================================================
+    def __init__(self):
+
+        self.__log = Logger()
+
+
+    # ==========================================
     # INSERTAR
-    # ==================================================
+    # ==========================================
 
     def insertar(self, matricula):
 
         conn = obtener_conexion()
         cursor = conn.cursor()
 
-        cursor.execute(
-            """
-            INSERT INTO matricula
-            (fecha_matricula,estado,id_alumno,id_curso)
-            VALUES(?,?,?,?)
-            """,
-            (
-                matricula.fecha_matricula,
-                matricula.estado,
-                matricula.id_alumno,
-                matricula.id_curso
+        try:
+
+            # Verificar matrícula duplicada
+
+            cursor.execute(
+                """
+                SELECT id_matricula
+                FROM matricula
+                WHERE id_alumno = %s
+                AND id_curso = %s
+                """,
+                (
+                    matricula.id_alumno,
+                    matricula.id_curso
+                )
             )
+
+            if cursor.fetchone():
+
+                self.__log.warning(
+                    f"Matrícula duplicada: "
+                    f"Alumno={matricula.id_alumno}, "
+                    f"Curso={matricula.id_curso}"
+                )
+
+                raise MatriculaDuplicadaError(
+                    matricula.id_alumno,
+                    matricula.id_curso
+                )
+
+            cursor.execute(
+                """
+                INSERT INTO matricula
+                (
+                    fecha_matricula,
+                    estado,
+                    id_alumno,
+                    id_curso
+                )
+                VALUES (%s, %s, %s, %s)
+                RETURNING id_matricula
+                """,
+                (
+                    matricula.fecha_matricula,
+                    matricula.estado.upper(),
+                    matricula.id_alumno,
+                    matricula.id_curso
+                )
+            )
+
+            fila = cursor.fetchone()
+
+            conn.commit()
+
+            matricula.id_matricula = fila["id_matricula"]
+            matricula.estado = matricula.estado.upper()
+
+        except psycopg2.IntegrityError as ex:
+
+            conn.rollback()
+
+            self.__log.warning(
+                f"Error al insertar matrícula: "
+                f"Alumno={matricula.id_alumno}, "
+                f"Curso={matricula.id_curso}"
+            )
+
+            raise ex
+
+        finally:
+
+            cursor.close()
+            conn.close()
+
+        self.__log.info(
+            f"Matrícula agregada: "
+            f"ID={matricula.id_matricula}"
         )
-
-        conn.commit()
-
-        matricula.id_matricula = cursor.lastrowid
-
-        conn.close()
 
         return matricula
 
-    # ==================================================
+
+    # ==========================================
     # BUSCAR POR ID
-    # ==================================================
+    # ==========================================
 
     def buscar_por_id(self, matricula_id):
 
@@ -54,32 +141,28 @@ class MatriculaDAO:
             """
             SELECT *
             FROM matricula
-            WHERE id_matricula = ?
+            WHERE id_matricula = %s
             """,
-            (matricula_id,)
+            (
+                matricula_id,
+            )
         )
 
         fila = cursor.fetchone()
 
+        cursor.close()
         conn.close()
 
-        if fila:
+        return (
+            self.__fila_a_matricula(fila)
+            if fila
+            else None
+        )
 
-            return Matricula(
 
-                fila["id_matricula"],
-                fila["fecha_matricula"],
-                fila["estado"],
-                fila["id_alumno"],
-                fila["id_curso"]
-
-            )
-
-        return None
-
-    # ==================================================
-    # LISTAR
-    # ==================================================
+    # ==========================================
+    # OBTENER TODOS
+    # ==========================================
 
     def obtener_todos(self):
 
@@ -96,27 +179,18 @@ class MatriculaDAO:
 
         filas = cursor.fetchall()
 
+        cursor.close()
         conn.close()
 
         return [
-
-            Matricula(
-
-                fila["id_matricula"],
-                fila["fecha_matricula"],
-                fila["estado"],
-                fila["id_alumno"],
-                fila["id_curso"]
-
-            )
-
+            self.__fila_a_matricula(fila)
             for fila in filas
-
         ]
 
-    # ==================================================
+
+    # ==========================================
     # ACTUALIZAR
-    # ==================================================
+    # ==========================================
 
     def actualizar(
         self,
@@ -127,69 +201,219 @@ class MatriculaDAO:
         id_curso=None
     ):
 
-        # Buscar matrícula actual
-        matricula = self.buscar_por_id(matricula_id)
+        m = self.buscar_por_id(matricula_id)
 
-        if matricula is None:
-            raise MatriculaNoEncontradaError(matricula_id)
+        if not m:
 
-        # Mantener valores actuales si no se envían cambios
-        fecha_matricula = matricula.fecha_matricula if fecha_matricula is None else fecha_matricula
-        estado = matricula.estado if estado is None else estado
-        id_alumno = matricula.id_alumno if id_alumno is None else id_alumno
-        id_curso = matricula.id_curso if id_curso is None else id_curso
+            self.__log.error(
+                f"Actualizar fallido: "
+                f"Matrícula ID={matricula_id} "
+                f"no existe"
+            )
 
+            raise MatriculaNoEncontradaError(
+                matricula_id
+            )
+
+        nueva_fecha = (
+            fecha_matricula
+            if fecha_matricula is not None
+            else m.fecha_matricula
+        )
+
+        nuevo_estado = (
+            estado.upper()
+            if estado is not None
+            else m.estado
+        )
+
+        nuevo_alumno = (
+            id_alumno
+            if id_alumno is not None
+            else m.id_alumno
+        )
+
+        nuevo_curso = (
+            id_curso
+            if id_curso is not None
+            else m.id_curso
+        )
 
         conn = obtener_conexion()
         cursor = conn.cursor()
 
-        cursor.execute(
-            """
-            UPDATE matricula
-            SET
-                fecha_matricula = ?,
-                estado = ?,
-                id_alumno = ?,
-                id_curso = ?
-            WHERE id_matricula = ?
-            """,
-            (
-                fecha_matricula,
-                estado,
-                id_alumno,
-                id_curso,
-                matricula_id
+        try:
+
+            # Verificar si el cambio genera una matrícula
+            # duplicada
+
+            cursor.execute(
+                """
+                SELECT id_matricula
+                FROM matricula
+                WHERE id_alumno = %s
+                AND id_curso = %s
+                AND id_matricula <> %s
+                """,
+                (
+                    nuevo_alumno,
+                    nuevo_curso,
+                    matricula_id
+                )
             )
+
+            if cursor.fetchone():
+
+                self.__log.warning(
+                    f"Actualizar fallido: "
+                    f"Alumno={nuevo_alumno}, "
+                    f"Curso={nuevo_curso} "
+                    f"ya están matriculados"
+                )
+
+                raise MatriculaDuplicadaError(
+                    nuevo_alumno,
+                    nuevo_curso
+                )
+
+            cursor.execute(
+                """
+                UPDATE matricula
+                SET
+                    fecha_matricula = %s,
+                    estado = %s,
+                    id_alumno = %s,
+                    id_curso = %s
+                WHERE id_matricula = %s
+                """,
+                (
+                    nueva_fecha,
+                    nuevo_estado,
+                    nuevo_alumno,
+                    nuevo_curso,
+                    matricula_id
+                )
+            )
+
+            conn.commit()
+
+        except psycopg2.IntegrityError:
+
+            conn.rollback()
+
+            self.__log.warning(
+                f"Actualizar fallido: "
+                f"Matrícula ID={matricula_id}"
+            )
+
+            raise
+
+        finally:
+
+            cursor.close()
+            conn.close()
+
+        m.fecha_matricula = nueva_fecha
+        m.estado = nuevo_estado
+        m.id_alumno = nuevo_alumno
+        m.id_curso = nuevo_curso
+
+        self.__log.info(
+            f"Matrícula actualizada: "
+            f"ID={matricula_id}"
         )
 
-        conn.commit()
-        conn.close()
+        return m
 
-        return self.buscar_por_id(matricula_id)
 
-    # ==================================================
+    # ==========================================
     # ELIMINAR
-    # ==================================================
+    # ==========================================
 
     def eliminar(self, matricula_id):
 
+        m = self.buscar_por_id(matricula_id)
+
+        if not m:
+
+            self.__log.error(
+                f"Eliminar fallido: "
+                f"Matrícula ID={matricula_id} "
+                f"no existe"
+            )
+
+            raise MatriculaNoEncontradaError(
+                matricula_id
+            )
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        try:
+
+            cursor.execute(
+                """
+                DELETE FROM matricula
+                WHERE id_matricula = %s
+                """,
+                (
+                    matricula_id,
+                )
+            )
+
+            conn.commit()
+
+        except psycopg2.IntegrityError:
+
+            conn.rollback()
+
+            raise
+
+        finally:
+
+            cursor.close()
+            conn.close()
+
+        self.__log.info(
+            f"Matrícula eliminada: "
+            f"ID={matricula_id}"
+        )
+
+
+    # ==========================================
+    # TOTAL
+    # ==========================================
+
+    def total(self):
+
         conn = obtener_conexion()
         cursor = conn.cursor()
 
         cursor.execute(
             """
-            DELETE FROM matricula
-            WHERE id_matricula = ?
-            """,
-            (matricula_id,)
+            SELECT COUNT(*) AS total
+            FROM matricula
+            """
         )
 
-        conn.commit()
+        total = cursor.fetchone()["total"]
 
-        if cursor.rowcount == 0:
-
-            conn.close()
-
-            raise MatriculaNoEncontradaError(matricula_id)
-
+        cursor.close()
         conn.close()
+
+        return total
+
+
+    # ==========================================
+    # FILA A MATRICULA
+    # ==========================================
+
+    def __fila_a_matricula(self, fila):
+
+        return Matricula(
+            fila["id_matricula"],
+            fila["fecha_matricula"],
+            fila["estado"],
+            fila["id_alumno"],
+            fila["id_curso"]
+        )
