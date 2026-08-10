@@ -1,7 +1,11 @@
 class Docente:
 
-    def __init__(self, id_docente=0, especialidad="",
-                 id_persona=0):
+    def __init__(
+        self,
+        id_docente=0,
+        especialidad="",
+        id_persona=0
+    ):
 
         self.__id_docente = id_docente
         self.__especialidad = especialidad
@@ -32,19 +36,26 @@ class Docente:
         self.__id_persona = valor
 
     def __str__(self):
-        return f"{self.__id_docente} - {self.__especialidad} - {self.__id_persona}"
-    
+
+        return (
+            f"{self.__id_docente} - "
+            f"{self.__especialidad} - "
+            f"{self.__id_persona}"
+        )
+
     def to_dict(self):
+
         return {
-            "ID_Docente": self.__id_docente,
-            "Especialidad": self.__especialidad,
-            "ID_Persona": self.__id_persona,
+            "id_docente": self.__id_docente,
+            "especialidad": self.__especialidad,
+            "id_persona": self.__id_persona
         }
 
     @classmethod
     def from_dict(cls, datos):
+
         return cls(
-            datos["ID_Docente"],
-            datos["Especialidad"],
-            datos["ID_Persona"]
+            datos.get("id_docente", 0),
+            datos.get("especialidad", ""),
+            datos.get("id_persona", 0)
         )
