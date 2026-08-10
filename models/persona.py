@@ -1,7 +1,15 @@
 class Persona:
 
-    def __init__(self, id_persona=0, dni="", nombres="", apellidos="",
-                 telefono="", correo="", direccion=""):
+    def __init__(
+        self,
+        id_persona=0,
+        dni="",
+        nombres="",
+        apellidos="",
+        telefono="",
+        correo="",
+        direccion=""
+    ):
 
         self.__id_persona = id_persona
         self.__dni = dni
@@ -68,28 +76,37 @@ class Persona:
         self.__direccion = valor
 
     def __str__(self):
-        return f"{self.__id_persona} {self.__dni} - {self.__nombres} - {self.__apellidos} - {self.__correo} - {self.__direccion}"
-    
+
+        return (
+            f"{self.__id_persona} - "
+            f"{self.__dni} - "
+            f"{self.__nombres} - "
+            f"{self.__apellidos} - "
+            f"{self.__correo} - "
+            f"{self.__direccion}"
+        )
+
     def to_dict(self):
+
         return {
-            "ID_Persona": self.__id_persona,
-            "Dni": self.__dni,
-            "Nombre": self.__nombres,
-            "Apellido": self.__apellidos,
-            "Telefono": self.__telefono,
-            "Correo": self.__correo,
-            "Direccion": self.__direccion
+            "id_persona": self.__id_persona,
+            "dni": self.__dni,
+            "nombres": self.__nombres,
+            "apellidos": self.__apellidos,
+            "telefono": self.__telefono,
+            "correo": self.__correo,
+            "direccion": self.__direccion
         }
-        
+
     @classmethod
     def from_dict(cls, datos):
 
         return cls(
-            id_persona=datos.get("ID_Persona", 0),
-            dni=datos.get("Dni", ""),
-            nombres=datos.get("Nombre", ""),
-            apellidos=datos.get("Apellido", ""),
-            telefono=datos.get("Telefono", ""),
-            correo=datos.get("Correo", ""),
-            direccion=datos.get("Direccion", "")
+            id_persona=datos.get("id_persona", 0),
+            dni=datos.get("dni", ""),
+            nombres=datos.get("nombres", ""),
+            apellidos=datos.get("apellidos", ""),
+            telefono=datos.get("telefono", ""),
+            correo=datos.get("correo", ""),
+            direccion=datos.get("direccion", "")
         )
