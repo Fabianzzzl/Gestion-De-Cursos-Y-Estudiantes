@@ -9,7 +9,25 @@ router = APIRouter(
 )
 
 
+# =========================================================
+# OBTENER HISTORIAL
+# =========================================================
+
 @router.get("/")
 def obtener_logs():
 
     return Logger().obtener_logs()
+
+
+# =========================================================
+# LIMPIAR HISTORIAL
+# =========================================================
+
+@router.delete("/")
+def limpiar_logs():
+
+    Logger().limpiar()
+
+    return {
+        "mensaje": "Historial de logs limpiado correctamente."
+    }
