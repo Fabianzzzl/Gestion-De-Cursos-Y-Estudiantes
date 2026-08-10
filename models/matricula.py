@@ -1,10 +1,13 @@
 class Matricula:
 
-    def __init__(self, id_matricula=0,
-                 fecha_matricula="",
-                 estado="ACTIVO",
-                 id_alumno=0,
-                 id_curso=0):
+    def __init__(
+        self,
+        id_matricula=0,
+        fecha_matricula="",
+        estado="ACTIVO",
+        id_alumno=0,
+        id_curso=0
+    ):
 
         self.__id_matricula = id_matricula
         self.__fecha_matricula = fecha_matricula
@@ -53,23 +56,31 @@ class Matricula:
         self.__id_curso = valor
 
     def __str__(self):
-        return f"Matrícula {self.__id_matricula} - {self.__estado} - {self.__id_alumno} - {self.__id_curso}"
-    
+
+        return (
+            f"Matrícula {self.__id_matricula} - "
+            f"{self.__estado} - "
+            f"{self.__id_alumno} - "
+            f"{self.__id_curso}"
+        )
+
     def to_dict(self):
+
         return {
-            "ID_Matricula": self.__id_matricula,
-            "Fecha_Matricula": self.__fecha_matricula,
-            "Estado": self.__estado,
-            "ID_Alumno": self.__id_alumno,
-            "ID_Curso": self.__id_curso,
+            "id_matricula": self.__id_matricula,
+            "fecha_matricula": self.__fecha_matricula,
+            "estado": self.__estado,
+            "id_alumno": self.__id_alumno,
+            "id_curso": self.__id_curso
         }
 
     @classmethod
     def from_dict(cls, datos):
+
         return cls(
-            datos.get("ID_Matricula", 0),
-            datos.get("Fecha_Matricula", ""),
-            datos.get("Estado", ""),
-            datos.get("ID_Alumno", 0),
-            datos.get("ID_Curso", 0)
+            datos.get("id_matricula", 0),
+            datos.get("fecha_matricula", ""),
+            datos.get("estado", "ACTIVO"),
+            datos.get("id_alumno", 0),
+            datos.get("id_curso", 0)
         )
