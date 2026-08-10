@@ -1,8 +1,3 @@
-# ==========================================
-# MODELO: ALUMNO
-# Proyecto: Sistema de Gestión de Cursos y Estudiantes
-# ==========================================
-
 class Alumno:
 
     def __init__(
@@ -18,11 +13,10 @@ class Alumno:
         self.__id_persona = id_persona
         self.__id_distrito = id_distrito
 
-
     @property
     def id_alumno(self):
         return self.__id_alumno
-    
+
     @id_alumno.setter
     def id_alumno(self, valor):
         self.__id_alumno = valor
@@ -31,9 +25,17 @@ class Alumno:
     def codigo_alumno(self):
         return self.__codigo_alumno
 
+    @codigo_alumno.setter
+    def codigo_alumno(self, valor):
+        self.__codigo_alumno = valor
+
     @property
     def id_persona(self):
         return self.__id_persona
+
+    @id_persona.setter
+    def id_persona(self, valor):
+        self.__id_persona = valor
 
     @property
     def id_distrito(self):
@@ -43,7 +45,6 @@ class Alumno:
     def id_distrito(self, valor):
         self.__id_distrito = valor
 
-    # Representación en texto
     def __str__(self):
 
         return (
@@ -52,20 +53,22 @@ class Alumno:
             f"Persona:{self.__id_persona} | "
             f"Distrito:{self.__id_distrito}"
         )
-        
+
     def to_dict(self):
+
         return {
-            "ID": self.__id_alumno,
-            "Código": self.__codigo_alumno,
-            "ID_Persona": self.__id_persona,
-            "ID_Distrito": self.__id_distrito,
+            "id_alumno": self.__id_alumno,
+            "codigo_alumno": self.__codigo_alumno,
+            "id_persona": self.__id_persona,
+            "id_distrito": self.__id_distrito
         }
 
     @classmethod
     def from_dict(cls, datos):
+
         return cls(
-            datos["ID"],
-            datos["Código"],
-            datos["ID_Persona"],
-            datos["ID_Distrito"]
+            datos.get("id_alumno", 0),
+            datos.get("codigo_alumno", ""),
+            datos.get("id_persona", 0),
+            datos.get("id_distrito", 0)
         )
