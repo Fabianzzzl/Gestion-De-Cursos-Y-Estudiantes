@@ -7,7 +7,8 @@ from routers import (
     alumnos,
     docentes,
     cursos,
-    matriculas
+    matriculas,
+    logs
 )
 
 # ==========================================
@@ -56,7 +57,7 @@ app.include_router(alumnos.router)
 app.include_router(docentes.router)
 app.include_router(cursos.router)
 app.include_router(matriculas.router)
-
+app.include_router(logs.router)
 
 # ==========================================
 # ENDPOINT PRINCIPAL
