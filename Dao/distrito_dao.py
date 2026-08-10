@@ -171,3 +171,222 @@ class DistritoDAO:
             if fila
             else None
         )
+    # ==========================================
+    # OBTENER TODOS
+    # ==========================================
+
+    def obtener_todos(self):
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM distrito
+            ORDER BY nombre
+            """
+        )
+
+        filas = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        return [
+            self.__fila_a_distrito(fila)
+            for fila in filas
+        ]
+
+
+    # ==========================================
+    # ACTUALIZAR
+    # ==========================================
+
+    def actualizar(
+        self,
+        distrito_id,
+        nombre=None
+    ):
+
+        d = self.buscar_por_id(distrito_id)
+
+        if not d:
+
+            self.__log.error(
+                f"Actualizar fallido: "
+                f"Distrito ID={distrito_id} no existe"
+            )
+
+            raise DistritoNoEncontradoError(
+                distrito_id
+            )
+
+        nuevo_nombre = (
+            nombre
+            if nombre is not None
+            else d.nombre
+        )
+
+        # Comprobar si el nuevo nombre
+        # ya pertenece a otro distrito
+
+        distrito_existente = self.buscar_por_nombre(
+            nuevo_nombre
+        )
+
+        if (
+            distrito_existente
+            and distrito_existente.id_distrito != distrito_id
+        ):
+
+            self.__log.warning(
+                f"Distrito duplicado: {nuevo_nombre}"
+            )
+
+            raise DistritoDuplicadoError(
+                nuevo_nombre
+            )
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        try:
+
+            cursor.execute(
+                """
+                UPDATE distrito
+                SET nombre = %s
+                WHERE id_distrito = %s
+                """,
+                (
+                    nuevo_nombre,
+                    distrito_id
+                )
+            )
+
+            conn.commit()
+
+        except psycopg2.IntegrityError:
+
+            conn.rollback()
+
+            self.__log.warning(
+                f"Actualizar fallido: "
+                f"Distrito duplicado {nuevo_nombre}"
+            )
+
+            raise DistritoDuplicadoError(
+                nuevo_nombre
+            )
+
+        finally:
+
+            cursor.close()
+            conn.close()
+
+        d.nombre = nuevo_nombre
+
+        self.__log.info(
+            f"Distrito actualizado: "
+            f"{d.nombre} (ID={distrito_id})"
+        )
+
+        return d
+
+
+    # ==========================================
+    # ELIMINAR
+    # ==========================================
+
+    def eliminar(self, distrito_id):
+
+        d = self.buscar_por_id(distrito_id)
+
+        if not d:
+
+            self.__log.error(
+                f"Eliminar fallido: "
+                f"Distrito ID={distrito_id} no existe"
+            )
+
+            raise DistritoNoEncontradoError(
+                distrito_id
+            )
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        try:
+
+            cursor.execute(
+                """
+                DELETE FROM distrito
+                WHERE id_distrito = %s
+                """,
+                (
+                    distrito_id,
+                )
+            )
+
+            conn.commit()
+
+        except psycopg2.IntegrityError:
+
+            conn.rollback()
+
+            self.__log.warning(
+                f"Eliminar fallido: "
+                f"Distrito ID={distrito_id} "
+                f"tiene registros asociados"
+            )
+
+            raise DistritoConRegistrosError(
+                distrito_id
+            )
+
+        finally:
+
+            cursor.close()
+            conn.close()
+
+        self.__log.info(
+            f"Distrito eliminado: "
+            f"{d.nombre} (ID={distrito_id})"
+        )
+
+
+    # ==========================================
+    # TOTAL
+    # ==========================================
+
+    def total(self):
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM distrito
+            """
+        )
+
+        total = cursor.fetchone()["total"]
+
+        cursor.close()
+        conn.close()
+
+        return total
+
+
+    # ==========================================
+    # FILA A DISTRITO
+    # ==========================================
+
+    def __fila_a_distrito(self, fila):
+
+        return Distrito(
+            fila["id_distrito"],
+            fila["nombre"]
+        )w
