@@ -389,4 +389,4 @@ class DistritoDAO:
         return Distrito(
             fila["id_distrito"],
             fila["nombre"]
-        )w
+        )
