@@ -1,23 +1,41 @@
-import sqlite3
+import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
-ARCHIVO_DB = "gestion_cursos_estudiantes.db"
+# ==========================================
+# CONFIGURACIÓN DE POSTGRESQL
+# ==========================================
 
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_NAME = os.getenv("DB_NAME","db_gestion_cursos_estudiantes")
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+
+# ==========================================
+# OBTENER CONEXIÓN
+# ==========================================
 
 def obtener_conexion():
 
-    conn = sqlite3.connect(ARCHIVO_DB)
-    
-    conn.execute("PRAGMA foreign_keys = ON")
-
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        database=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        cursor_factory=RealDictCursor
+    )
 
     return conn
 
+# ==========================================
+# INICIALIZAR BASE DE DATOS
+# ==========================================
 
 def Inicializar():
 
     conn = obtener_conexion()
-
     cursor = conn.cursor()
 
     # ==========================================
@@ -27,7 +45,9 @@ def Inicializar():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS distrito(
 
-            id_distrito INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_distrito INTEGER
+                GENERATED ALWAYS AS IDENTITY
+                PRIMARY KEY,
 
             nombre TEXT NOT NULL
 
@@ -41,7 +61,9 @@ def Inicializar():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS persona(
 
-            id_persona INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_persona INTEGER
+                GENERATED ALWAYS AS IDENTITY
+                PRIMARY KEY,
 
             dni TEXT NOT NULL UNIQUE,
 
@@ -65,7 +87,9 @@ def Inicializar():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS alumno(
 
-            id_alumno INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_alumno INTEGER
+                GENERATED ALWAYS AS IDENTITY
+                PRIMARY KEY,
 
             codigo_alumno TEXT NOT NULL UNIQUE,
 
@@ -89,7 +113,9 @@ def Inicializar():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS docente(
 
-            id_docente INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_docente INTEGER
+                GENERATED ALWAYS AS IDENTITY
+                PRIMARY KEY,
 
             especialidad TEXT NOT NULL,
 
@@ -108,7 +134,9 @@ def Inicializar():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS curso(
 
-            id_curso INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_curso INTEGER
+                GENERATED ALWAYS AS IDENTITY
+                PRIMARY KEY,
 
             nombre TEXT NOT NULL,
 
@@ -139,7 +167,9 @@ def Inicializar():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS matricula(
 
-            id_matricula INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_matricula INTEGER
+                GENERATED ALWAYS AS IDENTITY
+                PRIMARY KEY,
 
             fecha_matricula TEXT NOT NULL,
 
@@ -157,19 +187,29 @@ def Inicializar():
 
             CHECK(
                 estado IN
-                ('ACTIVO','RETIRADO','FINALIZADO')
+                ('ACTIVO', 'RETIRADO', 'FINALIZADO')
             )
 
         )
     """)
 
+    # ==========================================
+    # GUARDAR CAMBIOS
+    # ==========================================
+
     conn.commit()
 
+    # ==========================================
+    # CERRAR
+    # ==========================================
+
+    cursor.close()
     conn.close()
 
+# ==========================================
+# EJECUTAR DIRECTAMENTE
+# ==========================================
 
 if __name__ == "__main__":
-
     Inicializar()
-
-    print("Base de datos creada correctamente.")
+    print( "Base de datos PostgreSQL creada correctamente." )
