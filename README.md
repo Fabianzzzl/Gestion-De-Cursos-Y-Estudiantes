@@ -1,112 +1,71 @@
-Sistema de Gestión de Cursos y Estudiantes - Backend
+# Sistema de Gestión de Cursos y Estudiantes - Backend
 
-API REST para la gestión académica de una institución educativa. El backend permite administrar personas, distritos, alumnos, docentes, cursos y matrículas, además de proporcionar un historial de actividades del sistema.
+API REST desarrollada para la gestión académica de una institución educativa.
 
-El proyecto está desarrollado con Python, FastAPI y PostgreSQL y utiliza una arquitectura separada por routers, schemas, modelos y DAO.
+El backend permite administrar personas, distritos, alumnos, docentes, cursos y matrículas. También cuenta con un sistema de historial de actividades.
 
-Contenido
+El proyecto utiliza Python, FastAPI y PostgreSQL, siguiendo una arquitectura separada por routers, schemas, modelos y DAO.
 
-Descripción
+---
 
-Tecnologías
+## Contenido
 
-Estructura del proyecto
+- [Descripción](#descripción)
+- [Tecnologías](#tecnologías)
+- [Estructura del proyecto](#estructura-del-proyecto)
+- [Arquitectura](#arquitectura)
+- [Base de datos](#base-de-datos)
+- [Instalación](#instalación)
+- [Configuración](#configuración)
+- [Ejecución](#ejecución)
+- [Documentación de la API](#documentación-de-la-api)
+- [Endpoints](#endpoints)
+- [Validaciones](#validaciones)
+- [Códigos HTTP](#códigos-http)
+- [CORS](#cors)
+- [Historial de eventos](#historial-de-eventos)
+- [Conexión con el frontend](#conexión-con-el-frontend)
+- [Git](#git)
+- [Seguridad](#seguridad)
+- [Estado del proyecto](#estado-del-proyecto)
+- [Autoría](#autoría)
 
-Arquitectura
+---
 
-Base de datos
+## Descripción
 
-Instalación
+El backend proporciona los servicios necesarios para que el frontend pueda consultar, registrar, actualizar y eliminar información académica.
 
-Configuración de PostgreSQL
+### Módulos
 
-Ejecución
+- Personas
+- Distritos
+- Alumnos
+- Docentes
+- Cursos
+- Matrículas
+- Historial del sistema
 
-Documentación de la API
+La API implementa operaciones CRUD mediante endpoints HTTP y utiliza Pydantic para la validación de datos.
 
-Endpoints
+---
 
-Códigos HTTP
+## Tecnologías
 
-Validaciones
+| Tecnología | Uso |
+|---|---|
+| Python | Lenguaje principal |
+| FastAPI | Framework para la API REST |
+| Uvicorn | Servidor ASGI |
+| PostgreSQL | Sistema gestor de base de datos |
+| psycopg2 | Conexión con PostgreSQL |
+| Pydantic | Validación de datos |
 
-CORS
+---
 
-Historial de eventos
+## Estructura del proyecto
 
-Conexión con el frontend
-
-Git
-
-Seguridad
-
-Estado del proyecto
-
-Autoría
-
-Descripción
-
-El backend proporciona los servicios necesarios para que el frontend pueda consultar y administrar la información académica.
-
-Módulos principales
-
-Personas
-
-Distritos
-
-Alumnos
-
-Docentes
-
-Cursos
-
-Matrículas
-
-Historial del sistema
-
-La API expone operaciones CRUD mediante endpoints HTTP y utiliza Pydantic para validar los datos.
-
-Tecnologías
-
-Tecnología
-
-Uso
-
-Python
-
-Lenguaje principal
-
-FastAPI
-
-Framework para la API REST
-
-Uvicorn
-
-Servidor ASGI
-
-PostgreSQL
-
-Base de datos
-
-psycopg2-binary
-
-Conexión con PostgreSQL
-
-Pydantic
-
-Validación de datos
-
-Dependencias
-
-Las dependencias del proyecto se encuentran en requirements.txt:
-
-fastapi
-uvicorn
-psycopg2-binary
-pydantic
-
-Estructura del proyecto
-
+```text
 Gestion-De-Cursos-Y-Estudiantes/
 │
 ├── Dao/
@@ -153,197 +112,142 @@ Gestion-De-Cursos-Y-Estudiantes/
 ├── main.py
 ├── requirements.txt
 └── .gitignore
+```
 
-Arquitectura
+---
 
-El proyecto separa las responsabilidades en diferentes capas.
+## Arquitectura
 
-main.py
+El proyecto está dividido en diferentes capas para separar las responsabilidades.
 
-Es el punto de entrada de la API.
+### Main
 
-Aquí se:
+`main.py` es el punto de entrada de la aplicación.
 
-Crea la aplicación FastAPI.
+Se encarga de:
 
-Configura CORS.
+- Crear la aplicación FastAPI.
+- Configurar CORS.
+- Inicializar la base de datos.
+- Registrar los routers.
+- Definir el endpoint principal.
 
-Inicializa la base de datos.
+### Routers
 
-Registra los routers.
+La carpeta `routers/` contiene los endpoints de la API.
 
-Define el endpoint principal /.
+Cada router se encarga de recibir las solicitudes HTTP y comunicarse con la capa DAO correspondiente.
 
+```text
 routers/
+├── alumnos.py
+├── cursos.py
+├── distritos.py
+├── docentes.py
+├── logs.py
+├── matriculas.py
+└── personas.py
+```
 
-Contiene los endpoints HTTP de cada módulo.
+### Schemas
 
-Los routers reciben las peticiones del cliente y utilizan los DAO para realizar las operaciones correspondientes.
+La carpeta `schemas/` contiene los modelos de Pydantic.
 
-schemas/
+Se utilizan para:
 
-Contiene los modelos de Pydantic utilizados para:
+- Validar los datos recibidos.
+- Definir los datos de entrada.
+- Definir las respuestas de la API.
 
-Recibir datos.
+### Models
 
-Validar datos.
+La carpeta `models/` contiene las entidades principales del sistema.
 
-Definir respuestas de la API.
-
-Por ejemplo:
-
-PersonaCrear
-
-PersonaActualizar
-
-PersonaRespuesta
-
-models/
-
-Contiene las clases que representan las entidades del sistema:
-
+```text
 Persona
-
 Distrito
-
 Alumno
-
 Docente
-
 Curso
-
 Matrícula
+```
 
-Dao/
+### DAO
 
-Contiene las clases de acceso a datos.
+La carpeta `Dao/` contiene la capa de acceso a datos.
 
-Los DAO se encargan de realizar operaciones sobre PostgreSQL, como:
+Los DAO se encargan de realizar operaciones como:
 
-Obtener registros.
+- Consultar registros.
+- Buscar registros por ID.
+- Insertar registros.
+- Actualizar registros.
+- Eliminar registros.
 
-Buscar por ID.
+También permiten centralizar el acceso a PostgreSQL.
 
-Insertar.
+### Config
 
-Actualizar.
+La carpeta `config/` contiene la configuración general.
 
-Eliminar.
+#### base_datos.py
 
-También contienen errores específicos para diferentes situaciones, como registros duplicados o registros relacionados.
+Gestiona la conexión con PostgreSQL y la creación de las tablas necesarias.
 
-config/
+#### logger.py
 
-Contiene la configuración general del sistema.
+Gestiona el historial de eventos de la aplicación.
 
-base_datos.py
+#### sistema_config.py
 
-Gestiona la conexión con PostgreSQL y crea las tablas necesarias mediante CREATE TABLE IF NOT EXISTS.
+Contiene información general de configuración del sistema.
 
-logger.py
+---
 
-Implementa el historial de eventos del sistema mediante un Singleton.
+## Base de datos
 
-Los eventos pueden tener los niveles:
+El sistema utiliza PostgreSQL.
 
-INFO
+La base de datos utilizada es:
 
-WARNING
-
-ERROR
-
-sistema_config.py
-
-Contiene la configuración general del sistema, como:
-
-Nombre.
-
-Versión.
-
-Empresa.
-
-Autor.
-
-Base de datos
-
-El backend utiliza PostgreSQL.
-
-La base de datos configurada por defecto es:
-
+```text
 db_gestion_cursos_estudiantes
+```
 
-Configuración de conexión
+### Tablas
 
-Variable
-
-Valor predeterminado
-
-DB_HOST
-
-localhost
-
-DB_PORT
-
-5432
-
-DB_NAME
-
-db_gestion_cursos_estudiantes
-
-DB_USER
-
-postgres
-
-DB_PASSWORD
-
-configuración local
-
-La configuración puede modificarse mediante variables de entorno.
-
-La base de datos PostgreSQL debe existir antes de iniciar la aplicación. Al iniciar el backend, base_datos.py crea las tablas que no existan.
-
-Modelo de datos
-
-El sistema utiliza las siguientes tablas:
-
+```text
 distrito
-
 persona
-
 alumno
-
 docente
-
 curso
-
 matricula
+```
 
-Relaciones principales
+### Relaciones principales
 
-DISTRITO
-   └── ALUMNO
-          └── MATRÍCULA ─── CURSO
-                              └── DOCENTE
-
-PERSONA
-   ├── ALUMNO
-   └── DOCENTE
-
+```text
 Distrito
-
-Contiene los distritos disponibles.
-
-Campos principales:
-
-id_distrito
-nombre
+   │
+   └── Alumno
+          │
+          └── Matrícula
+                 │
+                 └── Curso
+                        │
+                        └── Docente
 
 Persona
+   ├── Alumno
+   └── Docente
+```
 
-Contiene la información personal.
+### Persona
 
-Campos:
+Contiene la información personal de los usuarios relacionados con alumnos y docentes.
 
+```text
 id_persona
 dni
 nombres
@@ -351,38 +255,45 @@ apellidos
 telefono
 correo
 direccion
+```
 
-El DNI es único.
+### Distrito
 
-Alumno
+Contiene los distritos registrados.
+
+```text
+id_distrito
+nombre
+```
+
+### Alumno
 
 Relaciona una persona con un distrito.
 
-Campos:
-
+```text
 id_alumno
 codigo_alumno
 id_persona
 id_distrito
+```
 
-El código del alumno es único.
+El código del alumno debe ser único.
 
-Docente
+### Docente
 
 Relaciona una persona con una especialidad.
 
-Campos:
-
+```text
 id_docente
 especialidad
 id_persona
+```
 
-Curso
+### Curso
 
-Contiene la información académica del curso.
+Contiene la información académica de los cursos.
 
-Campos:
-
+```text
 id_curso
 nombre
 descripcion
@@ -390,702 +301,508 @@ creditos
 ciclo
 horas_semanales
 id_docente
+```
 
-Los créditos y las horas semanales deben ser mayores que cero.
-
-Matrícula
+### Matrícula
 
 Relaciona un alumno con un curso.
 
-Campos:
-
+```text
 id_matricula
 fecha_matricula
 estado
 id_alumno
 id_curso
+```
 
-Los estados permitidos son:
+Los estados disponibles son:
 
+```text
 ACTIVO
 RETIRADO
 FINALIZADO
+```
 
-Instalación
+---
 
-Requisitos
+## Instalación
 
-Se necesita tener instalado:
+### Requisitos
 
-Python 3
+Antes de ejecutar el proyecto se necesita:
 
-PostgreSQL
-
-pip
+- Python 3
+- PostgreSQL
+- pip
 
 Comprobar Python:
 
+```bash
 python --version
+```
 
 Comprobar pip:
 
+```bash
 pip --version
+```
 
-Configuración de PostgreSQL
+---
 
-Crear en PostgreSQL la base de datos:
+## Configuración
 
+### Crear la base de datos
+
+En PostgreSQL:
+
+```sql
 CREATE DATABASE db_gestion_cursos_estudiantes;
+```
 
-Después verificar que PostgreSQL esté ejecutándose.
+El backend se encarga de crear las tablas necesarias al iniciar.
 
-El backend se encargará de crear las tablas al iniciar.
+### Variables de entorno
 
-Variables de entorno
-
-Si las credenciales locales no coinciden con los valores predeterminados, se pueden configurar variables de entorno.
+La conexión con PostgreSQL puede configurarse mediante variables de entorno.
 
 Ejemplo en Windows PowerShell:
 
+```powershell
 $env:DB_HOST="localhost"
 $env:DB_PORT="5432"
 $env:DB_NAME="db_gestion_cursos_estudiantes"
 $env:DB_USER="postgres"
 $env:DB_PASSWORD="TU_CONTRASEÑA"
+```
 
-Después iniciar el servidor en la misma terminal.
+No se deben subir contraseñas reales al repositorio.
 
-No subas contraseñas reales al repositorio.
+---
 
-Crear entorno virtual
+## Entorno virtual
 
-Desde la carpeta del backend.
+Crear el entorno virtual:
 
-Windows
-
+```bash
 python -m venv venv
+```
+
+### Windows
 
 Activar:
 
+```powershell
 venv\Scripts\activate
+```
 
-Linux / macOS
-
-python3 -m venv venv
+### Linux y macOS
 
 Activar:
 
+```bash
 source venv/bin/activate
+```
 
-Instalar dependencias
+---
+
+## Instalar dependencias
 
 Con el entorno virtual activado:
 
+```bash
 pip install -r requirements.txt
+```
 
-Ejecución
+Las dependencias principales son:
 
-Desde la raíz del proyecto:
+```text
+fastapi
+uvicorn
+psycopg2-binary
+pydantic
+```
 
+---
+
+## Ejecución
+
+Ejecutar desde la carpeta principal del backend:
+
+```bash
 uvicorn main:app --reload
+```
 
-La API estará disponible normalmente en:
+La API estará disponible en:
 
-http://127.0.0.1:8000
+```text
+http://localhost:8000
+```
 
 También puede utilizarse:
 
-http://localhost:8000
+```text
+http://127.0.0.1:8000
+```
 
-Documentación de la API
+---
 
-FastAPI genera documentación automáticamente.
+## Documentación de la API
 
-Swagger UI
+FastAPI genera automáticamente la documentación de los endpoints.
 
+### Swagger UI
+
+```text
 http://localhost:8000/docs
+```
 
-ReDoc
+### ReDoc
 
+```text
 http://localhost:8000/redoc
+```
 
-Estas páginas permiten consultar y probar los endpoints directamente desde el navegador.
+Desde Swagger se pueden consultar y probar directamente los endpoints de la API.
 
-Endpoints
+---
 
-Endpoint principal
+## Endpoints
 
-GET /
+### Endpoint principal
 
-Comprueba que la API está funcionando.
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/` | Comprueba que la API está funcionando |
 
-Respuesta:
+---
 
-{
-  "mensaje": "API del Sistema de Gestión de Cursos y Estudiantes funcionando correctamente"
-}
+### Personas
 
-Personas
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/personas/` | Listar personas |
+| GET | `/personas/{persona_id}` | Obtener una persona |
+| POST | `/personas/` | Registrar una persona |
+| PUT | `/personas/{persona_id}` | Actualizar una persona |
+| DELETE | `/personas/{persona_id}` | Eliminar una persona |
 
-Base: /personas
+---
 
-Método
+### Distritos
 
-Endpoint
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/distritos/` | Listar distritos |
+| GET | `/distritos/{distrito_id}` | Obtener un distrito |
+| POST | `/distritos/` | Registrar un distrito |
+| PUT | `/distritos/{distrito_id}` | Actualizar un distrito |
+| DELETE | `/distritos/{distrito_id}` | Eliminar un distrito |
 
-Función
+---
 
-GET
+### Alumnos
 
-/personas/
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/alumnos/` | Listar alumnos |
+| GET | `/alumnos/{alumno_id}` | Obtener un alumno |
+| POST | `/alumnos/` | Registrar un alumno |
+| PUT | `/alumnos/{alumno_id}` | Actualizar un alumno |
+| DELETE | `/alumnos/{alumno_id}` | Eliminar un alumno |
 
-Listar personas
+---
 
-GET
+### Docentes
 
-/personas/{persona_id}
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/docentes/` | Listar docentes |
+| GET | `/docentes/{docente_id}` | Obtener un docente |
+| POST | `/docentes/` | Registrar un docente |
+| PUT | `/docentes/{docente_id}` | Actualizar un docente |
+| DELETE | `/docentes/{docente_id}` | Eliminar un docente |
 
-Obtener persona
+---
 
-POST
+### Cursos
 
-/personas/
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/cursos/` | Listar cursos |
+| GET | `/cursos/{curso_id}` | Obtener un curso |
+| POST | `/cursos/` | Registrar un curso |
+| PUT | `/cursos/{curso_id}` | Actualizar un curso |
+| DELETE | `/cursos/{curso_id}` | Eliminar un curso |
 
-Crear persona
+---
 
-PUT
+### Matrículas
 
-/personas/{persona_id}
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/matriculas/` | Listar matrículas |
+| GET | `/matriculas/{matricula_id}` | Obtener una matrícula |
+| POST | `/matriculas/` | Registrar una matrícula |
+| PUT | `/matriculas/{matricula_id}` | Actualizar una matrícula |
+| DELETE | `/matriculas/{matricula_id}` | Eliminar una matrícula |
 
-Actualizar persona
+---
 
-DELETE
+### Historial
 
-/personas/{persona_id}
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/logs/` | Obtener historial |
+| DELETE | `/logs/` | Limpiar historial |
 
-Eliminar persona
+---
 
-Validación: el DNI debe contener exactamente 8 dígitos numéricos.
+## Validaciones
 
-Distritos
+El backend utiliza Pydantic para validar los datos recibidos.
 
-Base: /distritos
+### DNI
 
-Método
+Debe contener exactamente 8 dígitos numéricos.
 
-Endpoint
+Ejemplo:
 
-Función
-
-GET
-
-/distritos/
-
-Listar distritos
-
-GET
-
-/distritos/{distrito_id}
-
-Obtener distrito
-
-POST
-
-/distritos/
-
-Crear distrito
-
-PUT
-
-/distritos/{distrito_id}
-
-Actualizar distrito
-
-DELETE
-
-/distritos/{distrito_id}
-
-Eliminar distrito
-
-Alumnos
-
-Base: /alumnos
-
-Método
-
-Endpoint
-
-Función
-
-GET
-
-/alumnos/
-
-Listar alumnos
-
-GET
-
-/alumnos/{alumno_id}
-
-Obtener alumno
-
-POST
-
-/alumnos/
-
-Crear alumno
-
-PUT
-
-/alumnos/{alumno_id}
-
-Actualizar alumno
-
-DELETE
-
-/alumnos/{alumno_id}
-
-Eliminar alumno
-
-Cada alumno requiere:
-
-codigo_alumno
-id_persona
-id_distrito
-
-El código del alumno debe ser único.
-
-Docentes
-
-Base: /docentes
-
-Método
-
-Endpoint
-
-Función
-
-GET
-
-/docentes/
-
-Listar docentes
-
-GET
-
-/docentes/{docente_id}
-
-Obtener docente
-
-POST
-
-/docentes/
-
-Crear docente
-
-PUT
-
-/docentes/{docente_id}
-
-Actualizar docente
-
-DELETE
-
-/docentes/{docente_id}
-
-Eliminar docente
-
-Cada docente contiene:
-
-especialidad
-id_persona
-
-Cursos
-
-Base: /cursos
-
-Método
-
-Endpoint
-
-Función
-
-GET
-
-/cursos/
-
-Listar cursos
-
-GET
-
-/cursos/{curso_id}
-
-Obtener curso
-
-POST
-
-/cursos/
-
-Crear curso
-
-PUT
-
-/cursos/{curso_id}
-
-Actualizar curso
-
-DELETE
-
-/cursos/{curso_id}
-
-Eliminar curso
-
-Datos principales:
-
-nombre
-descripcion
-creditos
-ciclo
-horas_semanales
-id_docente
-
-Validaciones:
-
-creditos > 0
-
-horas_semanales > 0
-
-Matrículas
-
-Base: /matriculas
-
-Método
-
-Endpoint
-
-Función
-
-GET
-
-/matriculas/
-
-Listar matrículas
-
-GET
-
-/matriculas/{matricula_id}
-
-Obtener matrícula
-
-POST
-
-/matriculas/
-
-Crear matrícula
-
-PUT
-
-/matriculas/{matricula_id}
-
-Actualizar matrícula
-
-DELETE
-
-/matriculas/{matricula_id}
-
-Eliminar matrícula
-
-Datos principales:
-
-fecha_matricula
-estado
-id_alumno
-id_curso
-
-Estados válidos:
-
-ACTIVO
-RETIRADO
-FINALIZADO
-
-Historial
-
-Base: /logs
-
-Método
-
-Endpoint
-
-Función
-
-GET
-
-/logs/
-
-Obtener historial
-
-DELETE
-
-/logs/
-
-Limpiar historial
-
-Cada evento contiene:
-
-{
-  "hora": "12:30:15",
-  "nivel": "INFO",
-  "msg": "Mensaje del evento"
-}
-
-Códigos HTTP
-
-El backend utiliza principalmente:
-
-Código
-
-Significado
-
-200
-
-OK
-
-201
-
-Created
-
-400
-
-Bad Request
-
-404
-
-Not Found
-
-200 OK
-
-La operación se realizó correctamente.
-
-201 Created
-
-Se creó correctamente un nuevo recurso.
-
-400 Bad Request
-
-Los datos enviados no son válidos o la operación no puede realizarse debido a una regla del sistema.
-
-Ejemplos:
-
-DNI duplicado.
-
-Código de alumno duplicado.
-
-Curso con datos inválidos.
-
-Matrícula duplicada.
-
-Intentar eliminar un registro relacionado.
-
-404 Not Found
-
-El recurso solicitado no existe.
-
-Validaciones
-
-El backend utiliza Pydantic para validar los datos.
-
-DNI
-
-Debe tener exactamente:
-
-8 dígitos numéricos
-
-Ejemplo válido:
-
+```text
 12345678
+```
 
-Créditos
+### Créditos
 
-Debe ser mayor que cero.
+Los créditos de un curso deben ser mayores que cero.
 
-Horas semanales
+### Horas semanales
 
-Debe ser mayor que cero.
+Las horas semanales deben ser mayores que cero.
 
-Estado de matrícula
+### Estado de matrícula
 
-Solo se permiten:
+Los estados permitidos son:
 
+```text
 ACTIVO
 RETIRADO
 FINALIZADO
+```
 
-CORS
+### Datos únicos
 
-La API tiene configurado CORS para permitir conexiones desde los puertos utilizados por el frontend local.
+El sistema controla valores que deben ser únicos, como:
 
-Actualmente se permiten:
+- DNI.
+- Código de alumno.
 
+También controla relaciones entre los diferentes registros.
+
+---
+
+## Códigos HTTP
+
+| Código | Significado |
+|---|---|
+| 200 | Operación realizada correctamente |
+| 201 | Recurso creado correctamente |
+| 400 | Solicitud incorrecta o regla de negocio no válida |
+| 404 | Recurso no encontrado |
+
+### Ejemplos de errores 400
+
+- DNI duplicado.
+- Código de alumno duplicado.
+- Matrícula duplicada.
+- Datos inválidos.
+- Intentar eliminar un registro relacionado.
+
+---
+
+## CORS
+
+El backend utiliza CORS para permitir la comunicación con el frontend durante el desarrollo.
+
+Orígenes configurados:
+
+```text
 http://localhost:5173
 http://localhost:5174
 http://localhost:3000
+```
 
-También están habilitados:
+Configuración utilizada:
 
+```text
 allow_credentials=True
 allow_methods=["*"]
 allow_headers=["*"]
+```
 
-Esto permite que el frontend React pueda comunicarse con la API durante el desarrollo local.
+---
 
-Historial de eventos
+## Historial de eventos
 
-El sistema posee un Logger implementado como Singleton.
+El sistema cuenta con un Logger implementado mediante Singleton.
 
-Permite registrar:
+Los eventos pueden registrar los siguientes niveles:
 
+```text
 INFO
 WARNING
 ERROR
+```
 
-Los registros se mantienen en memoria durante la ejecución de la aplicación.
+El historial puede consultarse mediante:
 
-Por lo tanto, el historial no se almacena permanentemente en PostgreSQL.
+```text
+GET /logs/
+```
 
-Al reiniciar el backend, los registros en memoria se pierden.
+Y puede limpiarse mediante:
 
-Conexión con el frontend
+```text
+DELETE /logs/
+```
 
-El frontend React utiliza esta API para realizar las operaciones CRUD.
+Los registros se mantienen en memoria durante la ejecución del backend.
 
-La comunicación se realiza mediante HTTP utilizando Axios.
+Por esta razón, los registros se pierden cuando la aplicación se reinicia.
 
-La configuración local utilizada por el frontend apunta a:
+---
 
+## Conexión con el frontend
+
+El frontend desarrollado en React se comunica con el backend mediante HTTP utilizando Axios.
+
+La API se ejecuta normalmente en:
+
+```text
 http://localhost:8000
+```
 
-Flujo de comunicación
+Flujo de comunicación:
 
-Frontend React
-      │
-      │ HTTP / Axios
-      ▼
-   FastAPI
-      │
-      │ DAO
-      ▼
- PostgreSQL
+```text
+React
+  │
+  │ Axios / HTTP
+  ▼
+FastAPI
+  │
+  │ DAO
+  ▼
+PostgreSQL
+```
 
-Git
+El frontend utiliza los endpoints de la API para realizar las operaciones CRUD.
 
-Para subir el proyecto a GitHub:
+---
 
+## Git
+
+Inicializar el repositorio:
+
+```bash
 git init
+```
 
-Comprobar el estado:
+Comprobar los archivos:
 
+```bash
 git status
+```
 
 Agregar los archivos:
 
+```bash
 git add .
+```
 
-Crear el commit:
+Crear un commit:
 
+```bash
 git commit -m "Backend sistema gestión cursos y estudiantes"
+```
 
 Agregar el repositorio remoto:
 
+```bash
 git remote add origin <URL_DEL_REPOSITORIO>
+```
 
 Establecer la rama principal:
 
+```bash
 git branch -M main
+```
 
 Subir el proyecto:
 
+```bash
 git push -u origin main
+```
 
-Seguridad
+---
 
-Este proyecto está orientado a un entorno académico/local.
+## Seguridad
+
+El proyecto está orientado principalmente a un entorno académico y de desarrollo local.
 
 Para un entorno de producción se recomienda:
 
-No guardar contraseñas directamente en el código.
+- Utilizar variables de entorno para las credenciales.
+- No almacenar contraseñas directamente en el código.
+- Implementar autenticación.
+- Implementar autorización por roles.
+- Utilizar HTTPS.
+- Restringir los orígenes permitidos por CORS.
+- Implementar una estrategia persistente para los logs.
+- Controlar los permisos de acceso a los recursos.
 
-Utilizar variables de entorno.
+---
 
-Implementar autenticación.
+## Estado del proyecto
 
-Implementar autorización por roles.
+El backend cuenta actualmente con:
 
-Utilizar HTTPS.
+- API REST desarrollada con FastAPI.
+- Base de datos PostgreSQL.
+- Conexión mediante psycopg2.
+- CRUD de Personas.
+- CRUD de Distritos.
+- CRUD de Alumnos.
+- CRUD de Docentes.
+- CRUD de Cursos.
+- CRUD de Matrículas.
+- Historial de eventos.
+- Validaciones mediante Pydantic.
+- Manejo de errores HTTP.
+- Configuración CORS.
+- Documentación automática mediante FastAPI.
+- Arquitectura DAO.
+- Modelos separados.
+- Schemas separados.
+- Configuración de base de datos.
+- Configuración mediante variables de entorno.
 
-Restringir CORS a dominios autorizados.
+---
 
-Validar y controlar los permisos de acceso a los recursos.
+## Autoría
 
-Utilizar una estrategia persistente para los logs.
-
-Estado del proyecto
-
-Actualmente el backend cuenta con:
-
-API REST con FastAPI.
-
-PostgreSQL.
-
-Conexión mediante psycopg2.
-
-CRUD de Personas.
-
-CRUD de Distritos.
-
-CRUD de Alumnos.
-
-CRUD de Docentes.
-
-CRUD de Cursos.
-
-CRUD de Matrículas.
-
-Historial de logs.
-
-Validación mediante Pydantic.
-
-Manejo de errores HTTP.
-
-CORS.
-
-Documentación automática de FastAPI.
-
-Arquitectura DAO.
-
-Modelos separados.
-
-Schemas separados.
-
-Configuración de base de datos.
-
-Variables de entorno para configuración de PostgreSQL.
-
-Autoría
-
-Sistema de Gestión de Cursos y Estudiantes
+**Sistema de Gestión de Cursos y Estudiantes**
 
 Proyecto académico.
 
-Autores configurados en el sistema
+### Autores
 
-Tello Luis
+- Tello Luis
+- Castro Raquel
 
-Castro Raquel
+### Institución
 
-Empresa / institución configurada
+**ISTP Argentina**
 
-ISTP Argentina
+### Versión
 
-Versión
-
-1.0
+**1.0**
