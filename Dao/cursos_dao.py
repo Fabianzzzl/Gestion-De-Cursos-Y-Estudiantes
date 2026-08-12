@@ -419,6 +419,33 @@ class CursoDAO:
     # TOTAL
     # ==========================================
 
+
+    def buscar(self, nombre=None, ciclo=None, id_docente=None):
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        try:
+            condiciones = []
+            valores = []
+            if nombre:
+                condiciones.append("nombre ILIKE %s")
+                valores.append(f"%{nombre.strip()}%")
+            if ciclo:
+                condiciones.append("UPPER(ciclo) = UPPER(%s)")
+                valores.append(ciclo.strip())
+            if id_docente is not None:
+                condiciones.append("id_docente = %s")
+                valores.append(id_docente)
+            if not condiciones:
+                return []
+            cursor.execute(
+                f"SELECT * FROM curso WHERE {' AND '.join(condiciones)} ORDER BY nombre",
+                tuple(valores)
+            )
+            return [self.__fila_a_curso(fila) for fila in cursor.fetchall()]
+        finally:
+            cursor.close()
+            conn.close()
+
     def total(self):
 
         conn = obtener_conexion()
