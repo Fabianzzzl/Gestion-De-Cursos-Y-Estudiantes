@@ -1,6 +1,8 @@
 import re
-from pydantic import BaseModel, field_validator
 from typing import Optional
+from pydantic import BaseModel, field_validator
+
+EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 class PersonaCrear(BaseModel):
     dni: str
@@ -13,10 +15,27 @@ class PersonaCrear(BaseModel):
     @field_validator("dni")
     @classmethod
     def validar_dni(cls, valor):
+        valor = valor.strip()
         if not re.fullmatch(r"\d{8}", valor):
-            raise ValueError(
-                "El DNI debe tener exactamente 8 dígitos numéricos"
-            )
+            raise ValueError("El DNI debe tener exactamente 8 dígitos numéricos")
+        return valor
+
+    @field_validator("nombres", "apellidos")
+    @classmethod
+    def validar_texto_obligatorio(cls, valor):
+        valor = valor.strip()
+        if not valor:
+            raise ValueError("El campo no puede estar vacío")
+        return valor
+
+    @field_validator("correo")
+    @classmethod
+    def validar_correo(cls, valor):
+        if valor is None or not valor.strip():
+            return None
+        valor = valor.strip().lower()
+        if not EMAIL_RE.fullmatch(valor):
+            raise ValueError("El correo electrónico no tiene un formato válido")
         return valor
 
 class PersonaActualizar(BaseModel):
@@ -30,13 +49,29 @@ class PersonaActualizar(BaseModel):
     @field_validator("dni")
     @classmethod
     def validar_dni(cls, valor):
-        if valor is not None and not re.fullmatch(
-            r"\d{8}",
-            valor
-        ):
-            raise ValueError(
-                "El DNI debe tener exactamente 8 dígitos numéricos"
-            )
+        if valor is not None:
+            valor = valor.strip()
+            if not re.fullmatch(r"\d{8}", valor):
+                raise ValueError("El DNI debe tener exactamente 8 dígitos numéricos")
+        return valor
+
+    @field_validator("nombres", "apellidos")
+    @classmethod
+    def validar_texto(cls, valor):
+        if valor is not None:
+            valor = valor.strip()
+            if not valor:
+                raise ValueError("El campo no puede estar vacío")
+        return valor
+
+    @field_validator("correo")
+    @classmethod
+    def validar_correo(cls, valor):
+        if valor is None or not valor.strip():
+            return None
+        valor = valor.strip().lower()
+        if not EMAIL_RE.fullmatch(valor):
+            raise ValueError("El correo electrónico no tiene un formato válido")
         return valor
 
 class PersonaRespuesta(BaseModel):
