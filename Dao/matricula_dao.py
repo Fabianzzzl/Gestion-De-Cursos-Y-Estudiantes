@@ -384,6 +384,33 @@ class MatriculaDAO:
     # TOTAL
     # ==========================================
 
+
+    def buscar(self, id_alumno=None, id_curso=None, estado=None):
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        try:
+            condiciones = []
+            valores = []
+            if id_alumno is not None:
+                condiciones.append("id_alumno = %s")
+                valores.append(id_alumno)
+            if id_curso is not None:
+                condiciones.append("id_curso = %s")
+                valores.append(id_curso)
+            if estado:
+                condiciones.append("UPPER(estado) = UPPER(%s)")
+                valores.append(estado.strip())
+            if not condiciones:
+                return []
+            cursor.execute(
+                f"SELECT * FROM matricula WHERE {' AND '.join(condiciones)} ORDER BY fecha_matricula, id_matricula",
+                tuple(valores)
+            )
+            return [self.__fila_a_matricula(fila) for fila in cursor.fetchall()]
+        finally:
+            cursor.close()
+            conn.close()
+
     def total(self):
 
         conn = obtener_conexion()
