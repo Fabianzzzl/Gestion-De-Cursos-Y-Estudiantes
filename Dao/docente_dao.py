@@ -295,6 +295,34 @@ class DocenteDAO:
     # TOTAL
     # ==========================================
 
+
+    def buscar(self, especialidad=None, nombre=None):
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        try:
+            condiciones = []
+            valores = []
+            if especialidad:
+                condiciones.append("d.especialidad ILIKE %s")
+                valores.append(f"%{especialidad.strip()}%")
+            if nombre:
+                condiciones.append("(p.nombres ILIKE %s OR p.apellidos ILIKE %s)")
+                patron=f"%{nombre.strip()}%"
+                valores.extend([patron, patron])
+            if not condiciones:
+                return []
+            cursor.execute(
+                f"""SELECT d.* FROM docente d
+                    JOIN persona p ON p.id_persona = d.id_persona
+                    WHERE {' AND '.join(condiciones)}
+                    ORDER BY d.especialidad""",
+                tuple(valores)
+            )
+            return [self.__fila_a_docente(fila) for fila in cursor.fetchall()]
+        finally:
+            cursor.close()
+            conn.close()
+
     def total(self):
 
         conn = obtener_conexion()
