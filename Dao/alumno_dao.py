@@ -383,6 +383,41 @@ class AlumnoDAO:
     # TOTAL
     # ==========================================
 
+
+    def buscar(self, codigo=None, dni=None, nombre=None, distrito=None):
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        try:
+            condiciones = []
+            valores = []
+            if codigo:
+                condiciones.append("a.codigo_alumno ILIKE %s")
+                valores.append(f"%{codigo.strip()}%")
+            if dni:
+                condiciones.append("p.dni = %s")
+                valores.append(dni.strip())
+            if nombre:
+                condiciones.append("(p.nombres ILIKE %s OR p.apellidos ILIKE %s)")
+                patron=f"%{nombre.strip()}%"
+                valores.extend([patron, patron])
+            if distrito:
+                condiciones.append("d.nombre ILIKE %s")
+                valores.append(f"%{distrito.strip()}%")
+            if not condiciones:
+                return []
+            cursor.execute(
+                f"""SELECT a.* FROM alumno a
+                    JOIN persona p ON p.id_persona = a.id_persona
+                    JOIN distrito d ON d.id_distrito = a.id_distrito
+                    WHERE {' AND '.join(condiciones)}
+                    ORDER BY a.codigo_alumno""",
+                tuple(valores)
+            )
+            return [self.__fila_a_alumno(fila) for fila in cursor.fetchall()]
+        finally:
+            cursor.close()
+            conn.close()
+
     def total(self):
 
         conn = obtener_conexion()
