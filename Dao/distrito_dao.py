@@ -360,6 +360,20 @@ class DistritoDAO:
     # TOTAL
     # ==========================================
 
+
+    def buscar(self, nombre):
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "SELECT * FROM distrito WHERE nombre ILIKE %s ORDER BY nombre",
+                (f"%{nombre.strip()}%",)
+            )
+            return [self.__fila_a_distrito(fila) for fila in cursor.fetchall()]
+        finally:
+            cursor.close()
+            conn.close()
+
     def total(self):
 
         conn = obtener_conexion()
