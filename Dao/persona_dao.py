@@ -62,14 +62,12 @@ class PersonaDAO:
     def insertar(self, persona):
 
         if self.buscar_por_dni(persona.dni):
+            self.__log.warning(f"DNI duplicado: {persona.dni}")
+            raise DNIDuplicadoError(persona.dni)
 
-            self.__log.warning(
-                f"DNI duplicado: {persona.dni}"
-            )
-
-            raise DNIDuplicadoError(
-                persona.dni
-            )
+        if persona.correo and self.buscar_por_correo(persona.correo):
+            self.__log.warning(f"Correo duplicado: {persona.correo}")
+            raise CorreoDuplicadoError(persona.correo)
 
         conn = obtener_conexion()
         cursor = conn.cursor()
@@ -302,6 +300,15 @@ class PersonaDAO:
             else p.direccion
         )
 
+        existente_dni = self.buscar_por_dni(nuevo_dni)
+        if existente_dni and existente_dni.id_persona != persona_id:
+            raise DNIDuplicadoError(nuevo_dni)
+
+        if nuevo_correo:
+            existente_correo = self.buscar_por_correo(nuevo_correo)
+            if existente_correo and existente_correo.id_persona != persona_id:
+                raise CorreoDuplicadoError(nuevo_correo)
+
         conn = obtener_conexion()
         cursor = conn.cursor()
 
@@ -444,6 +451,52 @@ class PersonaDAO:
     # ==========================================
     # TOTAL
     # ==========================================
+
+
+    def buscar_por_correo(self, correo):
+        if not correo:
+            return None
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "SELECT * FROM persona WHERE LOWER(correo) = LOWER(%s)",
+                (correo.strip(),)
+            )
+            fila = cursor.fetchone()
+            return self.__fila_a_persona(fila) if fila else None
+        finally:
+            cursor.close()
+            conn.close()
+
+    def buscar(self, dni=None, nombre=None, apellido=None, correo=None):
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        try:
+            condiciones = []
+            valores = []
+            if dni:
+                condiciones.append("dni = %s")
+                valores.append(dni.strip())
+            if nombre:
+                condiciones.append("nombres ILIKE %s")
+                valores.append(f"%{nombre.strip()}%")
+            if apellido:
+                condiciones.append("apellidos ILIKE %s")
+                valores.append(f"%{apellido.strip()}%")
+            if correo:
+                condiciones.append("correo ILIKE %s")
+                valores.append(f"%{correo.strip()}%")
+            if not condiciones:
+                return []
+            cursor.execute(
+                f"SELECT * FROM persona WHERE {' AND '.join(condiciones)} ORDER BY nombres, apellidos",
+                tuple(valores)
+            )
+            return [self.__fila_a_persona(fila) for fila in cursor.fetchall()]
+        finally:
+            cursor.close()
+            conn.close()
 
     def total(self):
 
